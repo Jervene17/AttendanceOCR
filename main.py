@@ -873,13 +873,7 @@ async def debug_any(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("UPDATE RECEIVED")
     print(update)
 
-app.add_handler(
-    MessageHandler(
-        filters.ALL,
-        debug_any
-    ),
-    group=-1
-)
+
 
 app = ApplicationBuilder().token(BOT_TOKEN).build()
 
