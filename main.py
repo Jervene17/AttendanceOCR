@@ -127,20 +127,24 @@ async def wednesday(update, context):
 async def friday(update, context):
     await start_service(update, context, "Friday")
 
-
 async def receive_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("===== RECEIVE PHOTO CALLED =====")
+    print(update)
 
-    user_id = update.effective_user.id
+    await update.message.reply_text("I received something!")
 
-    if user_id not in user_sessions:
-        await update.message.reply_text(
-            "Please start a service first.\n\n"
-            "Example:\n"
-            "/predawn"
-        )
-        return
+    if update.message.photo:
+        await update.message.reply_text("PHOTO detected!")
+
+    elif update.message.document:
+        await update.message.reply_text("DOCUMENT detected!")
+
+    else:
+        await update.message.reply_text("Something else detected.")
 
     session = user_sessions[user_id]
+
+    print(session["stage"])
 
     photo = update.message.photo[-1]
 
@@ -150,8 +154,11 @@ async def receive_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await file.download_to_drive(filename)
 
+    print("Downloaded:", filename)
+
     if session["stage"] == "online":
         session["online_images"].append(filename)
+        print(session["online_images"])
 
         await update.message.reply_text(
             f"✅ Online screenshot saved.\n"
@@ -187,7 +194,8 @@ async def done(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # ONLINE COMPLETE
     # -----------------------------
     if session["stage"] == STAGE_ONLINE:
-
+        print("ONLINE IMAGES =", session["online_images"])
+        print("STAGE =", session["stage"])
         if not session["online_images"]:
             await update.message.reply_text(
                 "Please upload at least one online screenshot."
@@ -859,6 +867,18 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
         return
+
+async def debug_any(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("UPDATE RECEIVED")
+    print(update)
+
+app.add_handler(
+    MessageHandler(
+        filters.ALL,
+        debug_any
+    ),
+    group=-1
+)
 
 app = ApplicationBuilder().token(BOT_TOKEN).build()
 
