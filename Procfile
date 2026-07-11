@@ -1,1 +1,1 @@
-start: python worker: python sundaybotattendance.py
+start: python worker: python main.py
