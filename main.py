@@ -142,6 +142,7 @@ async def receive_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("Something else detected.")
 
+    user_id = update.effective_user.id
     session = user_sessions[user_id]
 
     print(session["stage"])
@@ -882,7 +883,6 @@ app.add_handler(
 
 app = ApplicationBuilder().token(BOT_TOKEN).build()
 
-# Commands
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CommandHandler("predawn", predawn))
 app.add_handler(CommandHandler("sunday", sunday))
@@ -890,13 +890,21 @@ app.add_handler(CommandHandler("wednesday", wednesday))
 app.add_handler(CommandHandler("friday", friday))
 app.add_handler(CommandHandler("done", done))
 
-# Photo uploads
+app.add_handler(
+    MessageHandler(
+        filters.ALL,
+        debug_any,
+    ),
+    group=-1,
+)
+
 app.add_handler(
     MessageHandler(
         filters.PHOTO,
-        receive_photo
+        receive_photo,
     )
 )
+
 app.add_handler(
     CallbackQueryHandler(button_handler)
 )
