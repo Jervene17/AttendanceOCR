@@ -1,3 +1,8 @@
+print("=" * 50)
+print("ATTENDANCE OCR V2")
+print("Commit: e1a89a9")
+print("=" * 50)
+
 import os
 
 print(os.getcwd())
