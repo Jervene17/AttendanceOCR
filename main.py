@@ -155,17 +155,18 @@ async def receive_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     photo = update.message.photo[-1]
 
     try:
-       print("Getting Telegram file...")
-       file = await photo.get_file()
-       print("Telegram file obtained.")
+        print("Getting Telegram file...")
+        file = await photo.get_file()
+        print("Telegram file obtained.")
     except Exception as e:
         print("GET_FILE ERROR:", repr(e))
         raise
+
     os.makedirs("temp", exist_ok=True)
 
-    print("About to download:", filename)
-
     filename = f"temp/{uuid.uuid4()}.jpg"
+
+    print("About to download:", filename)
 
     await file.download_to_drive(filename)
 
