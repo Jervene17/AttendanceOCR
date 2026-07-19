@@ -88,29 +88,25 @@ def get_attendee_names(result, sort=True):
     return names
 
 def recognize_multiple_images(image_paths):
-    """
-    Process multiple screenshots and combine the results.
-    """
-
     recognized = []
     unknown = []
     duplicates = []
-
     seen = set()
 
-    for image_path in image_paths:
+    for i, image_path in enumerate(image_paths, 1):
+
+        print(f"[{i}/{len(image_paths)}] OCR processing {image_path}...")
 
         result = process_image(image_path)
+
+        print(f"[{i}/{len(image_paths)}] done: {len(result['recognized'])} recognized, {len(result['unknown'])} unknown")
 
         for member in result["recognized"]:
 
             if member["name"] not in seen:
-
                 recognized.append(member)
                 seen.add(member["name"])
-
             else:
-
                 duplicates.append(member["name"])
 
         unknown.extend(result["unknown"])
@@ -120,7 +116,6 @@ def recognize_multiple_images(image_paths):
         "unknown": sorted(set(unknown)),
         "duplicates": sorted(set(duplicates)),
     }
-
 def attendance_summary(result):
     """
     Creates a readable attendance summary.

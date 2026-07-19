@@ -4,6 +4,7 @@ print("Commit: e1a89a9")
 print("=" * 50)
 
 import os
+import asyncio
 
 print(os.getcwd())
 
@@ -222,9 +223,7 @@ async def done(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Processing online screenshots..."
         )
 
-        result = recognize_multiple_images(
-            session["online_images"]
-        )
+        result = await asyncio.to_thread(recognize_multiple_images, session["online_images"])
 
         session["online_result"] = result
 
@@ -275,9 +274,7 @@ async def done(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Processing onsite screenshots..."
         )
 
-        result = recognize_multiple_images(
-            session["onsite_images"]
-        )
+        result = await asyncio.to_thread(recognize_multiple_images, session["onsite_images"])
 
         session["onsite_result"] = result
 
