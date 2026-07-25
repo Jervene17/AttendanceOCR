@@ -11,25 +11,19 @@ print("Loading EasyOCR...")
 reader = easyocr.Reader(["en"])
 
 print("EasyOCR Ready!")
+
 def read_image(image_path):
-
     results = reader.readtext(image_path)
-
     return results
+
 def extract_text(image_path):
-
     results = read_image(image_path)
-
     return [text for _, text, _ in results]
 
 def extract_clean_text(image_path):
-
     raw = extract_text(image_path)
-
     cleaned = clean_names(raw)
-
     cleaned = remove_duplicates(cleaned)
-
     return cleaned
 
 def recognize_members(image_path):
@@ -39,29 +33,24 @@ def recognize_members(image_path):
         - unknown names
         - duplicate names
     """
-
     cleaned_names = extract_clean_text(image_path)
 
     recognized = []
     unknown = []
     duplicates = []
-
     seen = set()
 
     for text in cleaned_names:
-
         member = find_member(text)
 
         if member:
-
-            member_name = member["name"]
+            member_name = member["display_name"]
 
             if member_name not in seen:
                 recognized.append(member)
                 seen.add(member_name)
             else:
                 duplicates.append(member_name)
-
         else:
             unknown.append(text)
 
@@ -70,17 +59,12 @@ def recognize_members(image_path):
         "unknown": unknown,
         "duplicates": duplicates,
     }
+
 def get_attendee_names(result, sort=True):
     """
     Returns the recognized attendee names.
-
-    Args:
-        result: Output from recognize_members()
-        sort: If True, return names alphabetically.
-              If False, preserve the OCR detection order.
     """
-
-    names = [member["name"] for member in result["recognized"]]
+    names = [member["display_name"] for member in result["recognized"]]
 
     if sort:
         names.sort()
@@ -102,12 +86,11 @@ def recognize_multiple_images(image_paths):
         print(f"[{i}/{len(image_paths)}] done: {len(result['recognized'])} recognized, {len(result['unknown'])} unknown")
 
         for member in result["recognized"]:
-
-            if member["name"] not in seen:
+            if member["display_name"] not in seen:
                 recognized.append(member)
-                seen.add(member["name"])
+                seen.add(member["display_name"])
             else:
-                duplicates.append(member["name"])
+                duplicates.append(member["display_name"])
 
         unknown.extend(result["unknown"])
 
@@ -116,15 +99,14 @@ def recognize_multiple_images(image_paths):
         "unknown": sorted(set(unknown)),
         "duplicates": sorted(set(duplicates)),
     }
+
 def attendance_summary(result):
     """
     Creates a readable attendance summary.
     """
-
     names = get_attendee_names(result)
 
     lines = []
-
     lines.append(f"Recognized: {len(names)}")
 
     if names:
@@ -134,7 +116,6 @@ def attendance_summary(result):
     if result["unknown"]:
         lines.append("")
         lines.append("Unknown:")
-
         lines.extend(result["unknown"])
 
     return "\n".join(lines)
@@ -143,5 +124,4 @@ def process_image(image_path):
     """
     Process a single image and return OCR results.
     """
-
     return recognize_members(image_path)

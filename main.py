@@ -301,7 +301,7 @@ def update_master_attendance(session, result, source):
 
     for member in result["recognized"]:
 
-        name = member["name"]
+        name = member["display_name"]
 
         session["recognized"].add(name)
 
@@ -362,16 +362,16 @@ async def show_review(update, context):
         lines.append(
             f"{icon} {department}: {present}/{expected}"
         )
-        missing = []
 
-    missing = [
-    member_name
-    for member_name in members
-    if member_name not in recognized
-]
-    if missing:
-        for member in missing:
-            lines.append(f"   • {member}")
+        missing = [
+            member_name
+            for member_name in members
+            if member_name not in recognized
+        ]
+
+        if missing:
+            for member in missing:
+                lines.append(f"   • {member}")
 
     lines.append("")
     lines.append(f"👥 Total Present: {total_present}/{total_expected}")
@@ -382,7 +382,7 @@ async def show_review(update, context):
 
         for name in sorted(session["unknown"]):
             lines.append(f"• {name}")
-    
+
     if session["visitors"]:
         lines.append("")
         lines.append("👥 Visitors")
@@ -399,40 +399,39 @@ async def show_review(update, context):
 
     keyboard = [
 
-    [
-        InlineKeyboardButton(
-            "✔ Verify Department",
-            callback_data="verify"
-        )
-    ],
+        [
+            InlineKeyboardButton(
+                "✔ Verify Department",
+                callback_data="verify"
+            )
+        ],
 
-    [
-        InlineKeyboardButton(
-            "➕ Visitor",
-            callback_data="visitor"
-        ),
+        [
+            InlineKeyboardButton(
+                "➕ Visitor",
+                callback_data="visitor"
+            ),
+            InlineKeyboardButton(
+                "➕ Newcomer",
+                callback_data="newcomer"
+            ),
+        ],
 
-        InlineKeyboardButton(
-            "➕ Newcomer",
-            callback_data="newcomer"
-        ),
-    ],
+        [
+            InlineKeyboardButton(
+                "✅ Submit",
+                callback_data="submit"
+            )
+        ],
 
-    [
-        InlineKeyboardButton(
-            "✅ Submit",
-            callback_data="submit"
-        )
-    ],
+        [
+            InlineKeyboardButton(
+                "❌ Cancel",
+                callback_data="cancel"
+            )
+        ],
 
-    [
-        InlineKeyboardButton(
-            "❌ Cancel",
-            callback_data="cancel"
-        )
-    ],
-
-]
+    ]
 
     await update.message.reply_text(
         "\n".join(lines),

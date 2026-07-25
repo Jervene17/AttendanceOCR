@@ -127,130 +127,271 @@ MEMBER_LISTS = {
 
 MEMBERS = {
 
-    # ===== FAMILY =====
+   MEMBERS = {
 
-    1: {
-        "name": "Fatima",
-        "aliases": ["Fatima Venturina","Fatima Berliene Venturina"],
-        "department": "FAMILY",
-        "type": "Member",
-        "status": "ACTIVE",
+    # =================================================
+    # FAMILY
+    # =================================================
+
+    "FAM001": {
+        "display_name": "Fatima",
+        "official_name": "Fatima Berliene Venturina",
+        "aliases": [
+            "Fatima",
+            "Fatima Venturina",
+            "Fatima Berliene Venturina",
+            "D.Fatima",
+            "DFatima",
+            "D Fatima",
+        ],
+        "department": FAMILY,
+        "status": ACTIVE,
+        "attendance": DEFAULT_ATTENDANCE.copy(),
+        "sort_order": 1,
     },
 
-    2: {
-        "name": "Vangie",
-        "aliases": ["Vangie Dolom"],
-        "department": "FAMILY",
-        "type": "Member",
-        "status": "ACTIVE",
+    "FAM002": {
+        "display_name": "Vangie",
+        "official_name": "Vangie Dolom",
+        "aliases": [
+            "Vangie",
+            "Vangie Dolom",
+        ],
+        "department": FAMILY,
+        "status": ACTIVE,
+        "attendance": DEFAULT_ATTENDANCE.copy(),
+        "sort_order": 2,
     },
 
-    3: {
-        "name": "M Ru",
-        "aliases": ["Ruby","Ruby Valderrama","Ruby Santos","Ruby Valderrama Santos","Ruby Valderrama-Santos"],
-        "department": "FAMILY",
-        "type": "Member",
-        "status": "ACTIVE",
+    "FAM003": {
+        "display_name": "M Ru",
+        "official_name": "Ruby Valderrama Santos",
+        "aliases": [
+            "Ruby",
+            "Ruby Valderrama",
+            "Ruby Santos",
+            "Ruby Valderrama Santos",
+            "Ruby Valderrama-Santos",
+            "MRu",
+            "M.Ru",
+            "M Ru",
+        ],
+        "department": FAMILY,
+        "status": ACTIVE,
+        "attendance": DEFAULT_ATTENDANCE.copy(),
+        "sort_order": 3,
     },
 
-    4: {
-        "name": "Dcns Frances",
-        "aliases": ["Frances Canillas","Frances Ann Canillas"],
-        "department": "FAMILY",
-        "type": "Member",
-        "status": "ACTIVE",
+    "FAM004": {
+        "display_name": "Dcns Frances",
+        "official_name": "Frances Ann Canillas",
+        "aliases": [
+            "Frances",
+            "Frances Canillas",
+            "Frances Ann Canillas",
+            "Dcns Frances",
+        ],
+        "department": FAMILY,
+        "status": ACTIVE,
+        "attendance": DEFAULT_ATTENDANCE.copy(),
+        "sort_order": 4,
     },
 
-    5: {
-        "name": "Shayne",
-        "aliases": ["Shayne Ericka","Shayne Ombao","Shayne Ericka Ombao","Shayne Dalde"],
-        "department": "FAMILY",
-        "type": "Member",
-        "status": "ACTIVE",
+    "FAM005": {
+        "display_name": "Shayne",
+        "official_name": "Shayne Ericka Ombao",
+        "aliases": [
+            "Shayne",
+            "Shayne Ericka",
+            "Shayne Ombao",
+            "Shayne Ericka Ombao",
+            "Shayne Dalde",
+        ],
+        "department": FAMILY,
+        "status": ACTIVE,
+        "attendance": DEFAULT_ATTENDANCE.copy(),
+        "sort_order": 5,
     },
 
-    6: {
-        "name": "Dcns Issa",
-        "aliases": ["Issa","Marissa", "Issa Liponhay", "Marissa Pastor","Marissa Pastor Liponhay","Issa Pastor","Issa Pastor Liponhay"],
-        "department": "FAMILY",
-        "type": "Member",
+    "FAM006": {
+        "display_name": "Dcns Issa",
+        "official_name": "Marissa Pastor Liponhay",
+        "aliases": [
+            "Issa",
+            "Marissa",
+            "Issa Liponhay",
+            "Marissa Pastor",
+            "Marissa Pastor Liponhay",
+            "Issa Pastor",
+            "Issa Pastor Liponhay",
+            "Dcns Issa",
+        ],
+        "department": FAMILY,
+        "status": ACTIVE,
+        "attendance": DEFAULT_ATTENDANCE.copy(),
+        "sort_order": 6,
     },
 
-    7: {
-        "name": "Hannah",
-        "aliases": ["Hannah Zotomayor", "Hannah Sanz"],
-        "department": "FAMILY",
-        "type": "Member",
+    "FAM007": {
+        "display_name": "Hannah",
+        "official_name": "Hannah Zotomayor",
+        "aliases": [
+            "Hannah",
+            "Hannah Zotomayor",
+            "Hannah Sanz",
+        ],
+        "department": FAMILY,
+        "status": ACTIVE,
+        "attendance": DEFAULT_ATTENDANCE.copy(),
+        "sort_order": 7,
     },
 
-    8: {
-        "name": "Dcn Ian",
-        "aliases": ["Jhong","Ian Liponhay","Jhong Liponhay"],
-        "department": "FAMILY",
-        "type": "Member",
+    "FAM008": {
+        "display_name": "Dcn Ian",
+        "official_name": "Ian Liponhay",
+        "aliases": [
+            "Ian",
+            "Jhong",
+            "Ian Liponhay",
+            "Jhong Liponhay",
+            "Dcn Jhong",
+            "Dcn Ian",
+        ],
+        "department": FAMILY,
+        "status": ACTIVE,
+        "attendance": DEFAULT_ATTENDANCE.copy(),
+        "sort_order": 8,
     },
 
-    9: {
-        "name": "M Jervene",
-        "aliases": ["Jervene Venturina","Jervene"],
-        "department": "FAMILY",
-        "type": "Member",
+    "FAM009": {
+        "display_name": "M Jervene",
+        "official_name": "Jervene Venturina",
+        "aliases": [
+            "Jervene",
+            "Jervene Venturina",
+            "M Jervene",
+            "M.Jervene",
+        ],
+        "department": FAMILY,
+        "status": ACTIVE,
+        "attendance": DEFAULT_ATTENDANCE.copy(),
+        "sort_order": 9,
     },
 
-    10: {
-        "name": "Jessie",
-        "aliases": ["Jessie Dalde","Jessie"],
-        "department": "FAMILY",
-        "type": "Member",
+    "FAM010": {
+        "display_name": "Jessie",
+        "official_name": "Jessie Dalde",
+        "aliases": [
+            "Jessie",
+            "Jessie Dalde",
+            "D.Jessie",
+            "DJessie",
+            "D Jessie",
+        ],
+        "department": FAMILY,
+        "status": ACTIVE,
+        "attendance": DEFAULT_ATTENDANCE.copy(),
+        "sort_order": 10,
     },
 
-    11: {
-        "name": "Almen",
-        "aliases": ["Almen Dolom","Almen"],
-        "department": "FAMILY",
-        "type": "Member",
+    "FAM011": {
+        "display_name": "Almen",
+        "official_name": "Almen Dolom",
+        "aliases": [
+            "Almen",
+            "Almen Dolom",
+        ],
+        "department": FAMILY,
+        "status": ACTIVE,
+        "attendance": DEFAULT_ATTENDANCE.copy(),
+        "sort_order": 11,
     },
 
-    12: {
-        "name": "Dcn Probo",
-        "aliases": ["Probo Canillas","Probo"],
-        "department": "FAMILY",
-        "type": "Member",
+    "FAM012": {
+        "display_name": "Dcn Probo",
+        "official_name": "Probo Canillas",
+        "aliases": [
+            "Probo",
+            "Probo Canillas",
+            "Dcn Probo",
+        ],
+        "department": FAMILY,
+        "status": ACTIVE,
+        "attendance": DEFAULT_ATTENDANCE.copy(),
+        "sort_order": 12,
     },
 
-    13: {
-        "name": "Fernan",
-        "aliases": ["Fernan Zotomayor","Fernan"],
-        "department": "FAMILY",
-        "type": "Member",
+    "FAM013": {
+        "display_name": "Fernan",
+        "official_name": "Fernan Zotomayor",
+        "aliases": [
+            "Fernan",
+            "Fernan Zotomayor",
+        ],
+        "department": FAMILY,
+        "status": ACTIVE,
+        "attendance": DEFAULT_ATTENDANCE.copy(),
+        "sort_order": 13,
     },
 
-    14: {
-        "name": "Jiboy",
-        "aliases": ["Jiboy","Honesto Juego","Jiboy Juego","Juego, Honesto Jr, Martinez"],
-        "department": "FAMILY",
-        "type": "Member",
+    "FAM014": {
+        "display_name": "Jiboy",
+        "official_name": "Honesto Martinez Juego Jr.",
+        "aliases": [
+            "Jiboy",
+            "Jiboy Juego",
+            "Honesto Juego",
+            "Juego, Honesto Jr, Martinez",
+        ],
+        "department": FAMILY,
+        "status": ACTIVE,
+        "attendance": DEFAULT_ATTENDANCE.copy(),
+        "sort_order": 14,
     },
 
-    15: {
-        "name": "Riza",
-        "aliases": ["Riza Gabriela","Riza","Riza Bonifacio"],
-        "department": "FAMILY",
-        "type": "Member",
+    "FAM015": {
+        "display_name": "Riza",
+        "official_name": "Riza Gabriela Bonifacio",
+        "aliases": [
+            "Riza",
+            "Riza Gabriela",
+            "Riza Bonifacio",
+        ],
+        "department": FAMILY,
+        "status": ACTIVE,
+        "attendance": DEFAULT_ATTENDANCE.copy(),
+        "sort_order": 15,
     },
 
-    16: {
-        "name": "Lavinia",
-        "aliases": ["Lavinia","Inia","Lavina Arances","Lavina Harris"],
-        "department": "FAMILY",
-        "type": "Member",
+    "FAM016": {
+        "display_name": "Lavinia",
+        "official_name": "Lavinia Arances Harris",
+        "aliases": [
+            "Lavinia",
+            "Lavina",
+            "Lavina Arances",
+            "Lavina Harris",
+            "Inia",
+        ],
+        "department": FAMILY,
+        "status": ACTIVE,
+        "attendance": DEFAULT_ATTENDANCE.copy(),
+        "sort_order": 16,
     },
 
-    17: {
-        "name": "Iven",
-        "aliases": ["Iven", "Axel","Iven Harris","Iven Axel Harris"],
-        "department": "FAMILY",
-        "type": "Member",
+    "FAM017": {
+        "display_name": "Iven",
+        "official_name": "Iven Axel Harris",
+        "aliases": [
+            "Iven",
+            "Axel",
+            "Iven Harris",
+            "Iven Axel Harris",
+        ],
+        "department": FAMILY,
+        "status": ACTIVE,
+        "attendance": DEFAULT_ATTENDANCE.copy(),
+        "sort_order": 17,
     },
     # ===== CAREER MALES =====
 
