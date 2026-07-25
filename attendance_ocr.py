@@ -9,7 +9,7 @@ from cleaner import (
 from members import find_member
 print("Loading EasyOCR...")
 
-reader = easyocr.Reader(["en"])
+reader = easyocr.Reader(["en", "ko"])
 
 print("EasyOCR Ready!")
 

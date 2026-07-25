@@ -430,11 +430,11 @@ MEMBERS = {
         "official_name": "Lavinia Arances Harris",
         "aliases": [
             "Lavinia",
-            "Lavina",
-            "Lavina Arances",
-            "Lavina Harris",
+            "Lavinia",
+            "Lavinia Arances",
+            "Lavinia Harris",
             "Inia",
-            "Lavina A Harris"
+            "Lavinia A Harris"
         ],
         "department": FAMILY,
         "status": ACTIVE,
