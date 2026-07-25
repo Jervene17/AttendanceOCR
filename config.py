@@ -133,8 +133,8 @@ MEMBER_LISTS = {
         "Joannes",
         "M Ju Nara",
         "M Sarah",
-        "MA",
-        "PA"
+        "M Azzel",
+        "P Auda"
     ],
 
     "CAMPUS FEMALES": [
@@ -166,6 +166,19 @@ MEMBER_LISTS = {
         "NC RD",
         "Kezia Aquino",
         "NC HM",
+    ],
+
+    "LLC": [
+        "Leah Jean Inson",
+        "Therese Marie Po",
+        "Shaina Fatima Inson",
+        "Rose Daisy Lemu",
+        "Ria",
+        "Irene Vicerra",
+    ],
+
+    "LVC": [
+        "Cynthia Aquino",
     ],
 }
 # =====================================================
@@ -421,6 +434,7 @@ MEMBERS = {
             "Lavina Arances",
             "Lavina Harris",
             "Inia",
+            "Lavina A Harris"
         ],
         "department": FAMILY,
         "status": ACTIVE,
@@ -870,7 +884,7 @@ MEMBERS = {
     },
 
     "CrF022": {
-        "display_name": "MA",
+        "display_name": "M Azzel",
         "official_name": "Azzel Lao",
         "aliases": [
             "MA",
@@ -917,7 +931,7 @@ MEMBERS = {
     },
 
     "CrF025": {
-        "display_name": "PA",
+        "display_name": "P Auda",
         "official_name": "Auda Atienza",
         "aliases": [
             "Auda",
@@ -1192,16 +1206,33 @@ MEMBERS = {
         ),
         "sort_order": 6,
     },
+    "OPM007": {
+        "display_name": "Alma Joy",
+        "official_name": "Alma Joy",
+        "aliases": [
+            "Alma",
+            "Alma Joy",
+        ],
+        "department": OPM,
+        "status": ACTIVE,
+        "attendance": attendance(
+            sunday=ONLINE,
+            wednesday=ONLINE,
+            predawn=ONLINE,
+        ),
+        "sort_order": 7,
+    },
     # =================================================
     # LORD'S LOVE CHURCH
     # =================================================
 
     "LLC001": {
-        "display_name": "LLC",
-        "official_name": "Philippines LLC",
+        "display_name": "Leah Jean Inson",
+        "official_name": "Leah Jean Inson",
         "aliases": [
-            "LLC",
-            "Philippines LLC",
+            "Leah",
+            "Leah Jean Inson",
+            "Leah Inson",
         ],
         "department": LLC,
         "status": ACTIVE,

@@ -19,7 +19,6 @@ NOISE_PHRASES = {
     "LGC TECH ONSITE",
     "IN THE MEETING",
     "PARTICIPANTS",
-    "ME",
     "HOST",
     "CO HOST",
     "UNMUTE",
@@ -29,6 +28,7 @@ NOISE_PHRASES = {
 NOISE_PREFIXES = (
     "LGC TECH",
     "LGC PHILIPPINES",
+    "PHILIPPINES_LGC"
 )
 
 
