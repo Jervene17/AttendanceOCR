@@ -99,6 +99,7 @@ async def start_service(update, context, service):
         "online_members": set(),
         "onsite_members": set(),
         "unknown": set(),
+        "unknown_sources": {},
 
         # Manual additions
         "newcomers": [],
@@ -311,7 +312,16 @@ def update_master_attendance(session, result, source):
         elif source == "onsite":
             session["onsite_members"].add(name)
 
-    session["unknown"].update(result["unknown"])
+    for name in result["unknown"]:
+
+        session["unknown"].add(name)
+
+        existing_source = session["unknown_sources"].get(name)
+
+        if existing_source and existing_source != source:
+            session["unknown_sources"][name] = "both"
+        else:
+            session["unknown_sources"].setdefault(name, source)
 
 def get_member_info(name):
     """
@@ -398,14 +408,25 @@ async def show_review(update, context):
             lines.append(f"• {newcomer}")
 
     keyboard = [
-
         [
             InlineKeyboardButton(
                 "✔ Verify Department",
                 callback_data="verify"
             )
         ],
+    ]
 
+    if session["unknown"]:
+        keyboard.append(
+            [
+                InlineKeyboardButton(
+                    "🔍 Resolve Unknown",
+                    callback_data="resolve"
+                )
+            ]
+        )
+
+    keyboard.append(
         [
             InlineKeyboardButton(
                 "➕ Visitor",
@@ -415,23 +436,26 @@ async def show_review(update, context):
                 "➕ Newcomer",
                 callback_data="newcomer"
             ),
-        ],
+        ]
+    )
 
+    keyboard.append(
         [
             InlineKeyboardButton(
                 "✅ Submit",
                 callback_data="submit"
             )
-        ],
+        ]
+    )
 
+    keyboard.append(
         [
             InlineKeyboardButton(
                 "❌ Cancel",
                 callback_data="cancel"
             )
-        ],
-
-    ]
+        ]
+    )
 
     await update.message.reply_text(
         "\n".join(lines),
@@ -554,6 +578,76 @@ def get_member_info(name):
 
     return None
 
+async def show_unknown_list(query, session):
+
+    unknown_sorted = sorted(session["unknown"])
+    session["unknown_sorted"] = unknown_sorted
+
+    if not unknown_sorted:
+        await query.edit_message_text(
+            "No unknown names to resolve.",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🏠 Attendance Review", callback_data="review")]
+            ])
+        )
+        return
+
+    keyboard = []
+
+    for i, name in enumerate(unknown_sorted):
+        keyboard.append(
+            [InlineKeyboardButton(name, callback_data=f"unk:{i}")]
+        )
+
+    keyboard.append(
+        [InlineKeyboardButton("🏠 Attendance Review", callback_data="review")]
+    )
+
+    await query.edit_message_text(
+        "❓ Select an unknown name to resolve:",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
+
+async def show_resolve_departments(query, session):
+
+    keyboard = []
+
+    for department in MEMBER_LISTS:
+        keyboard.append(
+            [InlineKeyboardButton(department, callback_data=f"adept:{department}")]
+        )
+
+    keyboard.append(
+        [InlineKeyboardButton("⬅ Back", callback_data="resolve")]
+    )
+
+    text = session.get("resolving_text", "")
+
+    await query.edit_message_text(
+        f"Resolving: \"{text}\"\n\nChoose their department:",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
+async def show_resolve_members(query, session, department):
+
+    keyboard = []
+
+    for member in MEMBER_LISTS[department]:
+        keyboard.append(
+            [InlineKeyboardButton(member, callback_data=f"aassign:{member}")]
+        )
+
+    keyboard.append(
+        [InlineKeyboardButton("⬅ Departments", callback_data="resolve")]
+    )
+
+    text = session.get("resolving_text", "")
+
+    await query.edit_message_text(
+        f"Resolving: \"{text}\"\n\n{department} — who is this?",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 async def show_review_callback(query, session):
 
     recognized = session["recognized"]
@@ -631,14 +725,25 @@ async def show_review_callback(query, session):
             lines.append(f"• {newcomer}")
 
     keyboard = [
-
         [
             InlineKeyboardButton(
                 "✔ Verify Department",
                 callback_data="verify"
             )
         ],
+    ]
 
+    if session["unknown"]:
+        keyboard.append(
+            [
+                InlineKeyboardButton(
+                    "🔍 Resolve Unknown",
+                    callback_data="resolve"
+                )
+            ]
+        )
+
+    keyboard.append(
         [
             InlineKeyboardButton(
                 "➕ Visitor",
@@ -648,23 +753,26 @@ async def show_review_callback(query, session):
                 "➕ Newcomer",
                 callback_data="newcomer"
             ),
-        ],
+        ]
+    )
 
+    keyboard.append(
         [
             InlineKeyboardButton(
                 "✅ Submit",
                 callback_data="submit"
             )
-        ],
+        ]
+    )
 
+    keyboard.append(
         [
             InlineKeyboardButton(
                 "❌ Cancel",
                 callback_data="cancel"
             )
-        ],
-
-    ]
+        ]
+    )
 
     await query.edit_message_text(
         "\n".join(lines),
@@ -751,6 +859,61 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if action == "verify":
 
         await show_departments(query, user_sessions[user_id])
+
+        return
+    elif action == "resolve":
+
+        await show_unknown_list(query, user_sessions[user_id])
+
+        return
+
+    elif action.startswith("unk:"):
+
+        session = user_sessions[user_id]
+
+        idx = int(action.split(":", 1)[1])
+
+        session["resolving_text"] = session["unknown_sorted"][idx]
+
+        await show_resolve_departments(query, session)
+
+        return
+
+    elif action.startswith("adept:"):
+
+        department = action.split(":", 1)[1]
+
+        session = user_sessions[user_id]
+
+        await show_resolve_members(query, session, department)
+
+        return
+
+    elif action.startswith("aassign:"):
+
+        member = action.split(":", 1)[1]
+
+        session = user_sessions[user_id]
+
+        resolved_text = session.get("resolving_text")
+
+        session["recognized"].add(member)
+
+        if resolved_text:
+
+            session["unknown"].discard(resolved_text)
+
+            src = session["unknown_sources"].pop(resolved_text, None)
+
+            if src in ("online", "both"):
+                session["online_members"].add(member)
+
+            if src in ("onsite", "both"):
+                session["onsite_members"].add(member)
+
+        session.pop("resolving_text", None)
+
+        await show_review_callback(query, session)
 
         return
     
