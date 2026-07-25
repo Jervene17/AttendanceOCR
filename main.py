@@ -32,6 +32,8 @@ from telegram.ext import (
 
 from attendance_ocr import (
     recognize_multiple_images,
+    recognize_text_names,
+    merge_results,
     attendance_summary,
 )
 
@@ -89,6 +91,7 @@ async def start_service(update, context, service):
         # Uploaded screenshots
         "online_images": [],
         "onsite_images": [],
+        "onsite_text_names": [],
 
         # OCR Results
         "online_result": None,
@@ -194,7 +197,32 @@ async def receive_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Upload another image or type /done."
         )
 
+async def receive_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
+    user_id = update.effective_user.id
+
+    if user_id not in user_sessions:
+        return
+
+    session = user_sessions[user_id]
+
+    if session["stage"] != STAGE_ONSITE:
+        return
+
+    text = update.message.text
+
+    if not text:
+        return
+
+    lines = [line.strip() for line in text.split("\n") if line.strip()]
+
+    session["onsite_text_names"].extend(lines)
+
+    await update.message.reply_text(
+        f"✅ Added {len(lines)} name(s) from text.\n"
+        f"Total from text: {len(session['onsite_text_names'])}\n\n"
+        "Send more names, upload screenshots, or type /done."
+    )
 
 async def done(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
@@ -244,7 +272,9 @@ async def done(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             "✅ Online attendance completed.\n\n"
 
-            "Now upload ONSITE screenshots.\n\n"
+            "Now upload ONSITE screenshots, or type/paste names "
+
+            "(one per line) directly in chat.\n\n"
 
             "When finished, type /done."
 
@@ -257,11 +287,14 @@ async def done(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # -----------------------------
     if session["stage"] == STAGE_ONSITE:
 
-        if not session["onsite_images"]:
+        has_images = bool(session["onsite_images"])
+        has_text = bool(session["onsite_text_names"])
+
+        if not has_images and not has_text:
 
             await update.message.reply_text(
 
-                "No onsite screenshots uploaded.\n\n"
+                "No onsite screenshots or names uploaded.\n\n"
 
                 "If nobody attended onsite,\n"
 
@@ -272,10 +305,23 @@ async def done(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         await update.message.reply_text(
-            "Processing onsite screenshots..."
+            "Processing onsite attendance..."
         )
 
-        result = await asyncio.to_thread(recognize_multiple_images, session["onsite_images"])
+        results_to_merge = []
+
+        if has_images:
+            image_result = await asyncio.to_thread(
+                recognize_multiple_images,
+                session["onsite_images"]
+            )
+            results_to_merge.append(image_result)
+
+        if has_text:
+            text_result = recognize_text_names(session["onsite_text_names"])
+            results_to_merge.append(text_result)
+
+        result = merge_results(*results_to_merge)
 
         session["onsite_result"] = result
 
@@ -1070,6 +1116,12 @@ app.add_handler(
     MessageHandler(
         filters.PHOTO,
         receive_photo,
+    )
+)
+app.add_handler(
+    MessageHandler(
+        filters.TEXT & ~filters.COMMAND,
+        receive_text,
     )
 )
 
