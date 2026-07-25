@@ -4,6 +4,7 @@ from cleaner import (
     normalize_name,
     clean_names,
     remove_duplicates,
+    is_noise,
 )
 from members import find_member
 print("Loading EasyOCR...")
@@ -41,6 +42,7 @@ def recognize_members(image_path):
     seen = set()
 
     for text in cleaned_names:
+
         member = find_member(text)
 
         if member:
@@ -51,8 +53,13 @@ def recognize_members(image_path):
                 seen.add(member_name)
             else:
                 duplicates.append(member_name)
-        else:
-            unknown.append(text)
+
+            continue
+
+        if is_noise(text):
+            continue
+
+        unknown.append(text)
 
     return {
         "recognized": recognized,

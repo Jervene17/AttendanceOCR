@@ -83,6 +83,7 @@ MEMBER_LISTS = {
         "Fatima",
         "Vangie",
         "M Ru",
+        "M Jhay",
         "Dcns Frances",
         "Shayne",
         "Dcns Issa",
@@ -128,7 +129,12 @@ MEMBER_LISTS = {
         "Trina",
         "Dr Kristine",
         "Milca",
-        "M Saeyoung"
+        "M Saeyoung",
+        "Joannes",
+        "M Ju Nara",
+        "M Sarah",
+        "MA",
+        "PA"
     ],
 
     "CAMPUS FEMALES": [
@@ -147,13 +153,19 @@ MEMBER_LISTS = {
         "Florelyn",
     ],
 
-    "HQ PLUS HL": [
-        "PK",
-        "M Ju Nara",
-        "MA",
-        "M Sarah",
-        "Mjhay",
-        "PA",
+    "OPM": [
+        "John Carlo Rucero",
+        "Cherry Na",
+        "Miae Park",
+        "Cheyserr Lamayra",
+        "M Saeyoung",
+        "Alma Joy",
+    ],
+
+    "Newcomers": [
+        "NC RD",
+        "Kezia Aquino",
+        "NC HM",
     ],
 }
 # =====================================================
@@ -247,7 +259,7 @@ MEMBERS = {
     },
 
     "FAM006": {
-        "display_name": "Dcns Issa",
+        "display_name": "Eldress Issa",
         "official_name": "Marissa Pastor Liponhay",
         "aliases": [
             "Issa",
@@ -258,6 +270,8 @@ MEMBERS = {
             "Issa Pastor",
             "Issa Pastor Liponhay",
             "Dcns Issa",
+            "Eldress Issa",
+            "E.Issa"
         ],
         "department": FAMILY,
         "status": ACTIVE,
@@ -320,6 +334,8 @@ MEMBERS = {
             "D.Jessie",
             "DJessie",
             "D Jessie",
+            "Dalde Jessie Jr",
+            "Jessie Dalde Jr"
         ],
         "department": FAMILY,
         "status": ACTIVE,
@@ -425,6 +441,22 @@ MEMBERS = {
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
         "sort_order": 17,
+    },
+
+    "FAM018": {
+        "display_name": "M Jhay",
+        "official_name": "Jonathan Santos",
+        "aliases": [
+            "Jonathan",
+            "Jhay",
+            "Jonathan Santos",
+            "Jhay Santos",
+            "NLP Jonathan Santos"
+        ],
+        "department": FAMILY,
+        "status": ACTIVE,
+        "attendance": DEFAULT_ATTENDANCE.copy(),
+        "sort_order": 18,
     },
         # =================================================
     # CAREER MALES
@@ -882,6 +914,22 @@ MEMBERS = {
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
         "sort_order": 24,
+    },
+
+    "CrF025": {
+        "display_name": "PA",
+        "official_name": "Auda Atienza",
+        "aliases": [
+            "Auda",
+            "Auda Love",
+            "Auda Atienza",
+            "Auda Allison Atienza",
+            "Allison Atienza",
+        ],
+        "department": CAREER_FEMALES,
+        "status": ACTIVE,
+        "attendance": DEFAULT_ATTENDANCE.copy(),
+        "sort_order": 25,
     },
     # =================================================
     # CAMPUS FEMALES
