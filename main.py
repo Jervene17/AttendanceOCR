@@ -874,14 +874,11 @@ async def submit_attendance(session):
 
 }
 
-    response = requests.post(
-
+    response = await asyncio.to_thread(
+        requests.post,
         WEBHOOK_URL,
-
         json=payload,
-
         timeout=30,
-
     )
 
     return response
@@ -1093,6 +1090,13 @@ async def debug_any(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("UPDATE RECEIVED")
     print(update)
 
+async def error_handler(update, context):
+    print("EXCEPTION:", repr(context.error))
+    import traceback
+    traceback.print_exception(type(context.error), context.error, context.error.__traceback__)
+
+
+
 
 print("=== BUILD 2 ===")
 app = ApplicationBuilder().token(BOT_TOKEN).build()
@@ -1103,7 +1107,7 @@ app.add_handler(CommandHandler("sunday", sunday))
 app.add_handler(CommandHandler("wednesday", wednesday))
 app.add_handler(CommandHandler("friday", friday))
 app.add_handler(CommandHandler("done", done))
-
+app.add_error_handler(error_handler)
 app.add_handler(
     MessageHandler(
         filters.ALL,
