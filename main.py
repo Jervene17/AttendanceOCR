@@ -1107,7 +1107,7 @@ app.add_handler(CommandHandler("sunday", sunday))
 app.add_handler(CommandHandler("wednesday", wednesday))
 app.add_handler(CommandHandler("friday", friday))
 app.add_handler(CommandHandler("done", done))
-app.add_error_handler(error_handler)
+
 app.add_handler(
     MessageHandler(
         filters.ALL,
@@ -1132,6 +1132,8 @@ app.add_handler(
 app.add_handler(
     CallbackQueryHandler(button_handler)
 )
+
+app.add_error_handler(error_handler)
 
 print("Attendance Bot V2 is running...")
 app.run_polling()

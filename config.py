@@ -22,6 +22,7 @@ JS = "JS"
 OPM = "OPM"
 LLC = "LLC"
 LVC = "LVC"
+MILKY_WAY = "Milky Way"
 
 # Status
 ACTIVE = "ACTIVE"
@@ -1101,6 +1102,80 @@ MEMBERS = {
         "attendance": DEFAULT_ATTENDANCE.copy(),
         "sort_order": 8,
     },
+    # =================================================
+    # Milky Way
+    # =================================================
+
+    "MW001": {
+        "display_name": "Victor Liponhay",
+        "official_name": "Victor Liponhay",
+        "aliases": [
+            "Victor",
+            "Uno",
+            "Victor Philip Liponhay",
+            "Victor Liponhay"
+        ],
+        "department": MILKY_WAY,
+        "status": ACTIVE,
+        "attendance": DEFAULT_ATTENDANCE.copy(),
+        "sort_order": 1,
+    },
+    "MW002": {
+        "display_name": "Eliana Given Venturina",
+        "official_name": "Eliana Given Venturina",
+        "aliases": [
+            "Eve",
+            "Eve Venturina",
+            "Eliana Given Venturina",
+        ],
+        "department": MILKY_WAY,
+        "status": ACTIVE,
+        "attendance": DEFAULT_ATTENDANCE.copy(),
+        "sort_order": 2,
+    },
+    "MW003": {
+        "display_name": "Vanna Amelie Dolom",
+        "official_name": "Vanna Amelie Dolom",
+        "aliases": [
+            "Vanna",
+            "Vanna Dolom",
+            "Vanna Amelie Dolom",
+        ],
+        "department": MILKY_WAY,
+        "status": ACTIVE,
+        "attendance": DEFAULT_ATTENDANCE.copy(),
+        "sort_order": 3,
+    },
+    "MW004": {
+            "display_name": "Aubrielle Gia Santos",
+            "official_name": "Aubrielle Gia Santos",
+            "aliases": [
+                "Bree",
+                "Bree Bree",
+                "Bree Bree Santos",
+                "Bree Santos",
+                "Gia Santos"
+                "Gia"
+            ],
+            "department": MILKY_WAY,
+            "status": ACTIVE,
+            "attendance": DEFAULT_ATTENDANCE.copy(),
+            "sort_order": 4,
+        },
+    "MW005": {
+                "display_name": "AM Zotomayor",
+                "official_name": "AM Zotomayor",
+                "aliases": [
+                    "Am Am",
+                    "Am Am Zotomayor",
+                ],
+                "department": MILKY_WAY,
+                "status": ACTIVE,
+                "attendance": DEFAULT_ATTENDANCE.copy(),
+                "sort_order": 5,
+            },
+        
+
     # =================================================
     # OVERSEAS FILIPINO MEMBERS
     # =================================================
