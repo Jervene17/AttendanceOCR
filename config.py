@@ -1017,14 +1017,14 @@ MEMBERS = {
     },
 
     "JS003": {
-        "display_name": "Grace",
+        "display_name": "Grace - Japan",
         "official_name": "Grace Givera",
         "aliases": [
             "Grace",
             "Grace Givera",
             "Megumi",
             "Megumi Givera",
-            "Megume (Me)",
+            "Megumi (Me)",
         ],
         "department": JS,
         "status": ACTIVE,
