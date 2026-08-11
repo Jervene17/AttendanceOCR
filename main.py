@@ -138,31 +138,29 @@ async def friday(update, context):
     await start_service(update, context, "Friday")
 
 async def receive_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("===== RECEIVE PHOTO CALLED =====")
-    print(update)
-
-    await update.message.reply_text("I received something!")
-
-    if update.message.photo:
-        await update.message.reply_text("PHOTO detected!")
-
-    elif update.message.document:
-        await update.message.reply_text("DOCUMENT detected!")
-
-    else:
-        await update.message.reply_text("Something else detected.")
 
     user_id = update.effective_user.id
+
+    if user_id not in user_sessions:
+        await update.message.reply_text(
+            "No active attendance session. Start one with /predawn, /sunday, /wednesday, or /friday."
+        )
+        return
+
     session = user_sessions[user_id]
 
-    print(session["stage"])
+    if update.message.photo:
+        photo_file = update.message.photo[-1]
 
-    photo = update.message.photo[-1]
+    elif update.message.document:
+        photo_file = update.message.document
+
+    else:
+        await update.message.reply_text("Please send an image.")
+        return
 
     try:
-        print("Getting Telegram file...")
-        file = await photo.get_file()
-        print("Telegram file obtained.")
+        file = await photo_file.get_file()
     except Exception as e:
         print("GET_FILE ERROR:", repr(e))
         raise
@@ -171,15 +169,10 @@ async def receive_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     filename = f"temp/{uuid.uuid4()}.jpg"
 
-    print("About to download:", filename)
-
     await file.download_to_drive(filename)
 
-    print("Downloaded:", filename)
-
-    if session["stage"] == "online":
+    if session["stage"] == STAGE_ONLINE:
         session["online_images"].append(filename)
-        print(session["online_images"])
 
         await update.message.reply_text(
             f"✅ Online screenshot saved.\n"
@@ -187,8 +180,7 @@ async def receive_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Upload another image or type /done."
         )
 
-    elif session["stage"] == "onsite":
-
+    elif session["stage"] == STAGE_ONSITE:
         session["onsite_images"].append(filename)
 
         await update.message.reply_text(
@@ -196,6 +188,9 @@ async def receive_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"Total: {len(session['onsite_images'])}\n\n"
             "Upload another image or type /done."
         )
+
+    else:
+        await update.message.reply_text("Not currently expecting a screenshot.")
 
 async def receive_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
@@ -1118,7 +1113,7 @@ app.add_handler(
 
 app.add_handler(
     MessageHandler(
-        filters.PHOTO,
+        filters.PHOTO | filters.Document.IMAGE,
         receive_photo,
     )
 )
