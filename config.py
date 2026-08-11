@@ -50,13 +50,22 @@ def attendance(sunday=None, wednesday=None, predawn=None):
         result["predawn"] = predawn
     return result
 
+# =====================================================
+# Retro Submission Organizers
+# =====================================================
+# User IDs allowed to initiate retro submissions (including
+# Sunday retro, which bypasses the department-checker flow).
+ORGANIZER_IDS = [
+    515714808, 
+    503493798,
+]
 USER_GROUP_MAP = {
     503493798: "FAMILY",
     485107813: "CAREER MALES",
     7681981308: "CAREER FEMALES",
     2016438287: "CAMPUS FEMALES",
     544095264: "JS",
-    515714808: "HQ PLUS HL",
+    515714808: "MILKY WAY",
 }
 
 # =====================================================
@@ -66,8 +75,6 @@ USER_GROUP_MAP = {
 USER_NAMES = {
     503493798: "Fatima",
     485107813: "Jabs",
-    707729145: "Shaja",
-    518836085: "Mel",
     7681981308: "D Rue",
     2016438287: "Divine",
     544095264: "MCor",
@@ -87,7 +94,7 @@ MEMBER_LISTS = {
         "M Jhay",
         "Dcns Frances",
         "Shayne",
-        "Dcns Issa",
+        "Eldress Issa",
         "Hannah",
         "Dcn Ian",
         "M Jervene",
@@ -146,7 +153,7 @@ MEMBER_LISTS = {
     "JS": [
         "MCor",
         "Tita Merlita",
-        "Grace",
+        "Grace - Japan",
         "Emeru",
         "Michelle",
         "Edilyn",
@@ -181,6 +188,13 @@ MEMBER_LISTS = {
     "LVC": [
         "Cynthia Aquino",
     ],
+        "Milky Way": [
+            "Victor Liponhay",
+            "Eliana Given Venturina",
+            "Vanna Dolom",
+            "Aubrielle Gia Santos"
+            "Am Zotomayor"
+        ],
 }
 # =====================================================
 # Master Member Registry
