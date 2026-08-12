@@ -961,6 +961,7 @@ MEMBERS = {
             "Auda Atienza",
             "Auda Allison Atienza",
             "Allison Atienza",
+            "PA",
         ],
         "department": CAREER_FEMALES,
         "status": ACTIVE,
@@ -1465,6 +1466,23 @@ MEMBERS = {
         ),
         "sort_order": 2,
     },
+
+    "LVC003": {
+            "display_name": "Diane",
+            "official_name": "Diane",
+            "aliases": [
+                "Diane",
+                "Diane",
+            ],
+            "department": LVC,
+            "status": ACTIVE,
+            "attendance": attendance(
+                sunday=ONLINE,
+                wednesday=ONLINE,
+                predawn=ONLINE,
+            ),
+            "sort_order": 3,
+        },
 }
 
 # =====================================================
