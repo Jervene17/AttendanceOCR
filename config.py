@@ -22,7 +22,7 @@ JS = "JS"
 OPM = "OPM"
 LLC = "LLC"
 LVC = "LVC"
-MILKY_WAY = "Milky Way"
+MILKY_WAY_SS = "Milky Way and SS"
 
 # Status
 ACTIVE = "ACTIVE"
@@ -65,7 +65,7 @@ USER_GROUP_MAP = {
     7681981308: "CAREER FEMALES",
     2016438287: "CAMPUS FEMALES",
     544095264: "JS",
-    515714808: "MILKY WAY",
+    515714808: "MILKY WAY and SS",
 }
 
 # =====================================================
@@ -191,7 +191,7 @@ MEMBER_LISTS = {
         "Diane",
         "Kezia",
     ],
-        "Milky Way": [
+        "Milky Way and SS": [
             "Victor Liponhay",
             "Eliana Given Venturina",
             "Vanna Dolom",
@@ -213,7 +213,6 @@ MEMBERS = {
         "display_name": "Fatima",
         "official_name": "Fatima Berliene Venturina",
         "aliases": [
-            "Fatima",
             "Fatima Venturina",
             "Fatima Berliene Venturina",
             "D.Fatima",
@@ -231,8 +230,9 @@ MEMBERS = {
         "display_name": "Vangie",
         "official_name": "Vangie Dolom",
         "aliases": [
-            "Vangie",
+            "Evangelyn Dolom",
             "Vangie Dolom",
+            "Evangelyn",
         ],
         "department": FAMILY,
         "status": ACTIVE,
@@ -251,7 +251,6 @@ MEMBERS = {
             "Ruby Valderrama-Santos",
             "MRu",
             "M.Ru",
-            "M Ru",
         ],
         "department": FAMILY,
         "status": ACTIVE,
@@ -266,7 +265,6 @@ MEMBERS = {
             "Frances",
             "Frances Canillas",
             "Frances Ann Canillas",
-            "Dcns Frances",
         ],
         "department": FAMILY,
         "status": ACTIVE,
@@ -278,7 +276,6 @@ MEMBERS = {
         "display_name": "Shayne",
         "official_name": "Shayne Ericka Ombao",
         "aliases": [
-            "Shayne",
             "Shayne Ericka",
             "Shayne Ombao",
             "Shayne Ericka Ombao",
@@ -302,7 +299,6 @@ MEMBERS = {
             "Issa Pastor",
             "Issa Pastor Liponhay",
             "Dcns Issa",
-            "Eldress Issa",
             "E.Issa",
             "E Issa",
             "EIssa",
@@ -317,7 +313,6 @@ MEMBERS = {
         "display_name": "Hannah",
         "official_name": "Hannah Zotomayor",
         "aliases": [
-            "Hannah",
             "Hannah Zotomayor",
             "Hannah Sanz",
         ],
@@ -331,12 +326,13 @@ MEMBERS = {
         "display_name": "Dcn Ian",
         "official_name": "Ian Liponhay",
         "aliases": [
-            "Ian",
+            "DIan",
             "Jhong",
             "Ian Liponhay",
             "Jhong Liponhay",
             "Dcn Jhong",
             "Dcn Ian",
+            "D Ian",
         ],
         "department": FAMILY,
         "status": ACTIVE,
@@ -348,7 +344,7 @@ MEMBERS = {
         "display_name": "M Jervene",
         "official_name": "Jervene Venturina",
         "aliases": [
-            "Jervene",
+            "MJervene",
             "Jervene Venturina",
             "M Jervene",
             "M.Jervene",
@@ -364,7 +360,6 @@ MEMBERS = {
         "display_name": "Jessie",
         "official_name": "Jessie Dalde",
         "aliases": [
-            "Jessie",
             "Jessie Dalde",
             "D.Jessie",
             "DJessie",
@@ -382,7 +377,6 @@ MEMBERS = {
         "display_name": "Almen",
         "official_name": "Almen Dolom",
         "aliases": [
-            "Almen",
             "Almen Dolom",
         ],
         "department": FAMILY,
@@ -409,7 +403,6 @@ MEMBERS = {
         "display_name": "Fernan",
         "official_name": "Fernan Zotomayor",
         "aliases": [
-            "Fernan",
             "Fernan Zotomayor",
         ],
         "department": FAMILY,
@@ -422,7 +415,6 @@ MEMBERS = {
         "display_name": "Jiboy",
         "official_name": "Honesto Martinez Juego Jr.",
         "aliases": [
-            "Jiboy",
             "Jiboy Juego",
             "Honesto Juego",
             "Juego, Honesto Jr, Martinez",
@@ -437,7 +429,6 @@ MEMBERS = {
         "display_name": "Riza",
         "official_name": "Riza Gabriela Bonifacio",
         "aliases": [
-            "Riza",
             "Riza Gabriela",
             "Riza Bonifacio",
             "Philippines_Riza (wmd)",
@@ -453,8 +444,6 @@ MEMBERS = {
         "display_name": "Lavinia",
         "official_name": "Lavinia Arances Harris",
         "aliases": [
-            "Lavinia",
-            "Lavinia",
             "Lavinia Arances",
             "Lavinia Harris",
             "Inia",
@@ -470,7 +459,6 @@ MEMBERS = {
         "display_name": "Iven",
         "official_name": "Iven Axel Harris",
         "aliases": [
-            "Iven",
             "Axel",
             "Iven Harris",
             "Iven Axel Harris",
@@ -489,7 +477,8 @@ MEMBERS = {
             "Jhay",
             "Jonathan Santos",
             "Jhay Santos",
-            "NLP Jonathan Santos"
+            "NLP Jonathan Santos",
+            "Mjhay",
         ],
         "department": FAMILY,
         "status": ACTIVE,
@@ -504,12 +493,12 @@ MEMBERS = {
         "display_name": "Jabs",
         "official_name": "Edgardo Magdua Jr.",
         "aliases": [
-            "Jabs",
             "Edgardo",
             "Jabs Magdua",
             "Edgardo Magdua Jr",
             "D Jabs",
             "D.Jabs",
+            "DJabs",
         ],
         "department": CAREER_MALES,
         "status": ACTIVE,
@@ -521,7 +510,7 @@ MEMBERS = {
         "display_name": "Xander",
         "official_name": "Alex Astucia",
         "aliases": [
-            "Xander",
+            "Xander Astucia",
             "Alex",
             "Alex Astucia",
         ],
@@ -535,7 +524,6 @@ MEMBERS = {
         "display_name": "Franz",
         "official_name": "Franz Javier Jr.",
         "aliases": [
-            "Franz",
             "Franz Javier",
             "Franz Javier Jr",
             "Franz Jr",
@@ -550,7 +538,6 @@ MEMBERS = {
         "display_name": "Daniel",
         "official_name": "Daniel Ezekiel Inson",
         "aliases": [
-            "Daniel",
             "Daniel Inson",
             "Daniel Ezekiel",
             "Daniel Ezekiel Inson",
@@ -567,9 +554,11 @@ MEMBERS = {
         "official_name": "Venancio Jimenez III",
         "aliases": [
             "Ven",
-            "Venancio",
             "Venancio Jimenez",
             "Venancio Jimenez III",
+            "Venancio Jimenez IILI",
+            "Venancio Jimenez ILI",
+            "Venancio Jimenez IIL",
         ],
         "department": CAREER_MALES,
         "status": ACTIVE,
@@ -581,7 +570,7 @@ MEMBERS = {
         "display_name": "Gideon",
         "official_name": "Gideon Alidon",
         "aliases": [
-            "Gideon",
+            "Gideon Mangahas Alidon",
             "Gideon Alidon",
         ],
         "department": CAREER_MALES,
@@ -597,7 +586,7 @@ MEMBERS = {
         "display_name": "Shaja",
         "official_name": "Shaja Alcantara",
         "aliases": [
-            "Shaja",
+            "Shaja Lei",
             "Shaja Alcantara",
         ],
         "department": CAREER_FEMALES,
@@ -610,7 +599,6 @@ MEMBERS = {
         "display_name": "Grace",
         "official_name": "Grace Leguarda",
         "aliases": [
-            "Grace",
             "Grace Leguarda",
             "Atty Grace",
             "Leguarda, Grace B",
@@ -626,7 +614,6 @@ MEMBERS = {
         "display_name": "Daryl",
         "official_name": "Daryl Mitzi Evangelista",
         "aliases": [
-            "Daryl",
             "Daryl Evangelista",
             "Daryl Mitzi Evangelista",
         ],
@@ -640,7 +627,7 @@ MEMBERS = {
         "display_name": "Clarice",
         "official_name": "Clarice",
         "aliases": [
-            "Clarice",
+            "Clarice A",
         ],
         "department": CAREER_FEMALES,
         "status": ACTIVE,
@@ -656,7 +643,7 @@ MEMBERS = {
         "display_name": "Aliza",
         "official_name": "Aliza Manuel",
         "aliases": [
-            "Aliza",
+            "Aliza M",
             "Aliza Manuel",
         ],
         "department": CAREER_FEMALES,
@@ -673,7 +660,7 @@ MEMBERS = {
         "display_name": "Anica",
         "official_name": "Anica Astucia",
         "aliases": [
-            "Anica",
+            "Anica A",
             "Anica Astucia",
         ],
         "department": CAREER_FEMALES,
@@ -686,7 +673,6 @@ MEMBERS = {
         "display_name": "Mel",
         "official_name": "Melanie Vaflor",
         "aliases": [
-            "Mel",
             "Melanie",
             "Melanie Vaflor",
             "D Mel",
@@ -703,7 +689,7 @@ MEMBERS = {
         "display_name": "Andrea",
         "official_name": "Andrea Bonifacio",
         "aliases": [
-            "Andrea",
+            "Andrea B",
             "Andrea Bonifacio",
         ],
         "department": CAREER_FEMALES,
@@ -716,7 +702,7 @@ MEMBERS = {
         "display_name": "Angel",
         "official_name": "Angel Galez",
         "aliases": [
-            "Angel",
+            "Angel G",
             "Angel Galez",
         ],
         "department": CAREER_FEMALES,
@@ -729,7 +715,7 @@ MEMBERS = {
         "display_name": "M Rose",
         "official_name": "Rosemarie",
         "aliases": [
-            "Rose",
+            "Rosemarie Juanatas",
             "Rosemarie",
             "Philippines_Rosemarie",
             "M Rose",
@@ -745,7 +731,7 @@ MEMBERS = {
         "display_name": "Vicky",
         "official_name": "Vicky Leguarda",
         "aliases": [
-            "Vicky",
+            "Vicky L",
             "Vicky Leguarda",
         ],
         "department": CAREER_FEMALES,
@@ -758,7 +744,7 @@ MEMBERS = {
         "display_name": "Donna",
         "official_name": "Donna Velasquez",
         "aliases": [
-            "Donna",
+            "Donna V",
             "Donna Velasquez",
         ],
         "department": CAREER_FEMALES,
@@ -775,7 +761,7 @@ MEMBERS = {
         "display_name": "D Rue",
         "official_name": "Rubilyn Narra",
         "aliases": [
-            "D Rue",
+            "D Rue Narra",
             "Rue",
             "Rue Narra",
             "Rubilyn Narra",
@@ -791,7 +777,7 @@ MEMBERS = {
         "display_name": "PP Bam",
         "official_name": "Gene Ann Ladaga",
         "aliases": [
-            "PP Bam",
+            "PP Bambi",
             "Bambi",
             "Bambi Ladaga",
             "Gene Ann Ladaga",
@@ -806,7 +792,7 @@ MEMBERS = {
         "display_name": "Zhandra",
         "official_name": "Zhandra Tam",
         "aliases": [
-            "Zhandra",
+            "Zhandra T",
             "Zhandra Tam",
         ],
         "department": CAREER_FEMALES,
@@ -823,7 +809,7 @@ MEMBERS = {
         "display_name": "Trina",
         "official_name": "Trina Yabut",
         "aliases": [
-            "Trina",
+            "Trina Y",
             "Trina Yabut",
             "T.Yabut",
         ],
@@ -837,7 +823,7 @@ MEMBERS = {
         "display_name": "Dr Kristine",
         "official_name": "Kristine",
         "aliases": [
-            "Dr Kristine",
+            "Doc Kristine",
             "Kristine",
         ],
         "department": CAREER_FEMALES,
@@ -854,7 +840,7 @@ MEMBERS = {
         "display_name": "Milca",
         "official_name": "Milca Angeles",
         "aliases": [
-            "Milca",
+            "Milca A",
             "Milca Angeles",
         ],
         "department": CAREER_FEMALES,
@@ -867,7 +853,7 @@ MEMBERS = {
         "display_name": "Nelissa",
         "official_name": "Nelissa",
         "aliases": [
-            "Nelissa",
+            "Nelissa P",
         ],
         "department": CAREER_FEMALES,
         "status": ACTIVE,
@@ -899,10 +885,11 @@ MEMBERS = {
         "display_name": "M Ju Nara",
         "official_name": "Krist Anonuevo",
         "aliases": [
-            "M Ju Nara",
+            "MJu",
             "Ju Nara",
             "Krist Anonuevo",
             "HQ Junara",
+            "M Ju"
         ],
         "department": CAREER_FEMALES,
         "status": ACTIVE,
@@ -915,7 +902,7 @@ MEMBERS = {
         "official_name": "Azzel Lao",
         "aliases": [
             "MA",
-            "Azzel",
+            "Ling Long",
             "Azzel Lao",
             "Philippines Azzel",
         ],
@@ -930,7 +917,7 @@ MEMBERS = {
         "official_name": "Sarah Alidon",
         "aliases": [
             "M Sarah",
-            "Sarah",
+            "Sarah A",
             "Sarah Alidon",
             "M Sa",
             "M.Sa",
@@ -981,7 +968,7 @@ MEMBERS = {
         "display_name": "Divine",
         "official_name": "Divine Hernandez",
         "aliases": [
-            "Divine",
+            "Divine H",
             "Divine Hernandez",
         ],
         "department": CAMPUS_FEMALES,
@@ -994,7 +981,7 @@ MEMBERS = {
         "display_name": "Marinell",
         "official_name": "Marinell Almero",
         "aliases": [
-            "Marinell",
+            "Marinell A",
             "Marinell Almero",
         ],
         "department": CAMPUS_FEMALES,
@@ -1010,7 +997,7 @@ MEMBERS = {
         "display_name": "MCor",
         "official_name": "Corazon Lualhati",
         "aliases": [
-            "MCor",
+            "Cor L",
             "M Cor",
             "M.Cor",
             "Cor",
@@ -1027,9 +1014,11 @@ MEMBERS = {
         "display_name": "Tita Merlita",
         "official_name": "Merlita Alidon",
         "aliases": [
-            "Tita Merlita",
+            "Tita Merly",
             "Merlita",
             "Merlita Alidon",
+            "Merly",
+            "Merly Alidon",
         ],
         "department": JS,
         "status": ACTIVE,
@@ -1046,7 +1035,7 @@ MEMBERS = {
             "Megumi",
             "Megumi Givera",
             "Megumi (Me)",
-            "Megume ME",
+            "Megumi ME",
         ],
         "department": JS,
         "status": ACTIVE,
@@ -1062,7 +1051,6 @@ MEMBERS = {
         "display_name": "Emeru",
         "official_name": "Emercedita Hiramatsu",
         "aliases": [
-            "Emeru",
             "Emercedita Hiramatsu",
         ],
         "department": JS,
@@ -1079,7 +1067,7 @@ MEMBERS = {
         "display_name": "Michelle",
         "official_name": "Michelle Bautista",
         "aliases": [
-            "Michelle",
+            "Michelle B",
             "Michelle Bautista",
             "Mitch Bautista",
         ],
@@ -1093,7 +1081,7 @@ MEMBERS = {
         "display_name": "Edilyn",
         "official_name": "Edilyn",
         "aliases": [
-            "Edilyn",
+            "Edilyn E",
         ],
         "department": JS,
         "status": ACTIVE,
@@ -1105,7 +1093,7 @@ MEMBERS = {
         "display_name": "Raquel",
         "official_name": "Raquel",
         "aliases": [
-            "Raquel",
+            "Raquel S",
         ],
         "department": JS,
         "status": ACTIVE,
@@ -1117,7 +1105,7 @@ MEMBERS = {
         "display_name": "Florelyn",
         "official_name": "Florelyn",
         "aliases": [
-            "Florelyn",
+            "Florelyn P",
         ],
         "department": JS,
         "status": ACTIVE,
@@ -1125,7 +1113,7 @@ MEMBERS = {
         "sort_order": 8,
     },
     # =================================================
-    # Milky Way
+    # Milky Way and SS
     # =================================================
 
     "MW001": {
@@ -1137,7 +1125,7 @@ MEMBERS = {
             "Victor Philip Liponhay",
             "Victor Liponhay"
         ],
-        "department": MILKY_WAY,
+        "department": MILKY_WAY_SS,
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
         "sort_order": 1,
@@ -1149,23 +1137,23 @@ MEMBERS = {
         "aliases": [
             "Eve",
             "Eve Venturina",
-            "Eliana Given Venturina",
+            "Eliana Given D. Venturina",
         ],
-        "department": MILKY_WAY,
+        "department": MILKY_WAY_SS,
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
         "sort_order": 2,
     },
 
     "MW003": {
-        "display_name": "Vanna Amelie Dolom",
+        "display_name": "Vanna",
         "official_name": "Vanna Amelie Dolom",
         "aliases": [
-            "Vanna",
+            "Vanna D",
             "Vanna Dolom",
             "Vanna Amelie Dolom",
         ],
-        "department": MILKY_WAY,
+        "department": MILKY_WAY_SS,
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
         "sort_order": 3,
@@ -1182,25 +1170,51 @@ MEMBERS = {
                 "Gia Santos"
                 "Gia"
             ],
-            "department": MILKY_WAY,
+            "department": MILKY_WAY_SS,
             "status": ACTIVE,
             "attendance": DEFAULT_ATTENDANCE.copy(),
             "sort_order": 4,
     },
     
     "MW005": {
-                "display_name": "Audrielle Zotomayor",
+                "display_name": "Audrielle Megan Zotomayor",
                 "official_name": "AM Zotomayor",
                 "aliases": [
                     "Am Am",
                     "Am Am Zotomayor",
                     "Audrielle,"
                 ],
-                "department": MILKY_WAY,
+                "department": MILKY_WAY_SS,
                 "status": ACTIVE,
                 "attendance": DEFAULT_ATTENDANCE.copy(),
                 "sort_order": 5,
     },
+
+    "SS001": {
+                    "display_name": "Nikko",
+                    "official_name": "Nikko Leguarda",
+                    "aliases": [
+                        "Nikko L",
+                        "Nikko Leguarda",
+                    ],
+                    "department": MILKY_WAY_SS,
+                    "status": ACTIVE,
+                    "attendance": DEFAULT_ATTENDANCE.copy(),
+                    "sort_order": 6,
+        },
+
+    "SS002": {
+                        "display_name": "Glenda",
+                        "official_name": "Glenda Leguarda",
+                        "aliases": [
+                            "Glenda L",
+                            "Glenda Leguarda",
+                        ],
+                        "department": MILKY_WAY_SS,
+                        "status": ACTIVE,
+                        "attendance": DEFAULT_ATTENDANCE.copy(),
+                        "sort_order": 7,
+            },
         
 
     # =================================================
@@ -1211,7 +1225,7 @@ MEMBERS = {
         "display_name": "Cheyserr",
         "official_name": "Cheyserr Lamayra",
         "aliases": [
-            "Cheyserr",
+            "Cheyserr L",
             "Cheyserr Lamayra",
         ],
         "department": OPM,
@@ -1228,7 +1242,7 @@ MEMBERS = {
         "display_name": "John Carlo",
         "official_name": "John Carlo Balmes Rucero",
         "aliases": [
-            "John Carlo",
+            "John Carlo R",
             "John Carlo Balmes Rucero",
             "John Carlo Rucero",
             "JC Lucero",
@@ -1247,7 +1261,7 @@ MEMBERS = {
         "display_name": "M Saeyoung",
         "official_name": "Jeong Saeyoung",
         "aliases": [
-            "M Saeyoung",
+            "M. Saeyoung",
             "Saeyoung",
             "Jeong Saeyoung",
             "정새영",
@@ -1268,7 +1282,7 @@ MEMBERS = {
         "display_name": "Miae",
         "official_name": "Miae Park",
         "aliases": [
-            "Miae",
+            "Miae P",
             "Miae Park",
         ],
         "department": OPM,
@@ -1285,7 +1299,7 @@ MEMBERS = {
         "display_name": "Andrew",
         "official_name": "Andrew Dela Cruz",
         "aliases": [
-            "Andrew",
+            "Andrew DC",
             "Andrew Dela Cruz",
         ],
         "department": OPM,
@@ -1302,9 +1316,8 @@ MEMBERS = {
         "display_name": "Cherry",
         "official_name": "Cherry Na",
         "aliases": [
-            "Cherry",
+            "Cherry N",
             "체리 나",
-            "Cherry Na",
         ],
         "department": OPM,
         "status": ACTIVE,
@@ -1319,7 +1332,7 @@ MEMBERS = {
         "display_name": "Alma Joy",
         "official_name": "Alma Joy",
         "aliases": [
-            "Alma",
+            "Alma J",
             "Alma Joy",
         ],
         "department": OPM,
@@ -1358,7 +1371,7 @@ MEMBERS = {
         "display_name": "Therese",
         "official_name": "Therese Marie Po",
         "aliases": [
-            "Therese",
+            "Therese P",
             "Therese Marie Po",
         ],
         "department": LLC,
@@ -1375,7 +1388,7 @@ MEMBERS = {
         "display_name": "Ria",
         "official_name": "Ria",
         "aliases": [
-            "Ria",
+            "Ria LLC",
             "LLC Ria",
         ],
         "department": LLC,
@@ -1392,7 +1405,7 @@ MEMBERS = {
         "display_name": "Irene",
         "official_name": "Irene Fe G. Vicerra",
         "aliases": [
-            "Irene",
+            "Irene V",
             "VICERRA, Irene Fe G.",
             "Irene Fe G. Vicerra",
         ],
@@ -1410,7 +1423,7 @@ MEMBERS = {
         "display_name": "Daisy",
         "official_name": "Rose Daisy Jane T. Lemu",
         "aliases": [
-            "Daisy",
+            "Daisy Lemu",
             "LEMU, Rose Daisy Jane T.",
             "Rose Daisy Jane T. Lemu",
         ],
@@ -1428,7 +1441,7 @@ MEMBERS = {
         "display_name": "Shaina",
         "official_name": "Shaina Fatima Inson",
         "aliases": [
-            "Shaina",
+            "Shaina I",
             "Shaina Fatima Inson",
         ],
         "department": LLC,
@@ -1448,7 +1461,7 @@ MEMBERS = {
         "display_name": "Cynthia",
         "official_name": "Cynthia Aquino",
         "aliases": [
-            "Cynthia",
+            "Cynthia A",
             "Cynthia Aquino",
         ],
         "department": LVC,
@@ -1465,7 +1478,7 @@ MEMBERS = {
         "display_name": "Kezia",
         "official_name": "Kezia Aquino",
         "aliases": [
-            "Kezia",
+            "Kezia A",
             "Kezia Aquino",
         ],
         "department": LVC,
@@ -1480,10 +1493,10 @@ MEMBERS = {
 
     "LVC003": {
             "display_name": "Diane",
-            "official_name": "Diane",
+            "official_name": "Diane Infante",
             "aliases": [
-                "Diane",
-                "Diane",
+                "Diane I",
+                "Diane Infante",
             ],
             "department": LVC,
             "status": ACTIVE,
