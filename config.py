@@ -137,7 +137,6 @@ MEMBER_LISTS = {
         "Trina",
         "Dr Kristine",
         "Milca",
-        "M Saeyoung",
         "Joannes",
         "M Ju Nara",
         "M Sarah",
