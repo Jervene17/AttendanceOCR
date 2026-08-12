@@ -2104,10 +2104,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
                 del user_sessions[user_id]
 
-                await query.edit_message_text(
+                # Drop the buttons so the review card can't be
+                # re-submitted, but keep the review text itself
+                # visible in the chat instead of overwriting it.
+                await query.edit_message_reply_markup(reply_markup=None)
 
+                await query.message.reply_text(
                     "✅ Attendance successfully submitted."
-
                 )
 
             else:
