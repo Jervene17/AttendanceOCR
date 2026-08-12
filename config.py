@@ -216,6 +216,7 @@ MEMBERS = {
             "D.Fatima",
             "DFatima",
             "D Fatima",
+            "BF_Fatima"
         ],
         "department": FAMILY,
         "status": ACTIVE,
@@ -1041,6 +1042,7 @@ MEMBERS = {
             "Megumi",
             "Megumi Givera",
             "Megumi (Me)",
+            "Megume ME",
         ],
         "department": JS,
         "status": ACTIVE,
