@@ -21,7 +21,7 @@ def normalize_alias(text):
     text = re.sub(r"[^\w\s]", " ", text)
 
     # Collapse multiple spaces
-    text = re.sub(r"\s+", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
 
     return text
 
@@ -293,4 +293,3 @@ def get_sorted_department_members(department):
     members.sort(key=lambda x: x["sort_order"])
 
     return members
-
