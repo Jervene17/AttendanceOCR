@@ -1139,6 +1139,7 @@ MEMBERS = {
         "attendance": DEFAULT_ATTENDANCE.copy(),
         "sort_order": 1,
     },
+
     "MW002": {
         "display_name": "Eliana Given Venturina",
         "official_name": "Eliana Given Venturina",
@@ -1152,6 +1153,7 @@ MEMBERS = {
         "attendance": DEFAULT_ATTENDANCE.copy(),
         "sort_order": 2,
     },
+
     "MW003": {
         "display_name": "Vanna Amelie Dolom",
         "official_name": "Vanna Amelie Dolom",
@@ -1165,6 +1167,7 @@ MEMBERS = {
         "attendance": DEFAULT_ATTENDANCE.copy(),
         "sort_order": 3,
     },
+
     "MW004": {
             "display_name": "Aubrielle Gia Santos",
             "official_name": "Aubrielle Gia Santos",
@@ -1181,12 +1184,14 @@ MEMBERS = {
             "attendance": DEFAULT_ATTENDANCE.copy(),
             "sort_order": 4,
     },
+    
     "MW005": {
-                "display_name": "AM Zotomayor",
+                "display_name": "Audrielle Zotomayor",
                 "official_name": "AM Zotomayor",
                 "aliases": [
                     "Am Am",
                     "Am Am Zotomayor",
+                    "Audrielle,"
                 ],
                 "department": MILKY_WAY,
                 "status": ACTIVE,
