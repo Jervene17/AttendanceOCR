@@ -1180,6 +1180,9 @@ def get_member_info(name):
     return None
 
 
+DEPARTMENT_COLORS = ["🔴", "🟠", "🟡", "🟢", "🔵", "🟣", "🟤"]
+
+
 def render_review_text(session):
 
     recognized = session["recognized"]
@@ -1193,7 +1196,9 @@ def render_review_text(session):
 
     total_present = 0
 
-    for department, members in MEMBER_LISTS.items():
+    for i, (department, members) in enumerate(MEMBER_LISTS.items()):
+
+        color = DEPARTMENT_COLORS[i % len(DEPARTMENT_COLORS)]
 
         present_members = [
             member_name
@@ -1203,7 +1208,7 @@ def render_review_text(session):
 
         total_present += len(present_members)
 
-        lines.append(f"{department}: {len(present_members)}")
+        lines.append(f"{color} {department}: {len(present_members)}")
 
         for member in present_members:
 
