@@ -1117,7 +1117,7 @@ MEMBERS = {
     # =================================================
 
     "MW001": {
-        "display_name": "Victor Liponhay",
+        "display_name": "Victor",
         "official_name": "Victor Liponhay",
         "aliases": [
             "Victor",
@@ -1132,10 +1132,10 @@ MEMBERS = {
     },
 
     "MW002": {
-        "display_name": "Eliana Given Venturina",
+        "display_name": "Eve",
         "official_name": "Eliana Given Venturina",
         "aliases": [
-            "Eve",
+            "Eliana Given",
             "Eve Venturina",
             "Eliana Given D. Venturina",
         ],
@@ -1160,7 +1160,7 @@ MEMBERS = {
     },
 
     "MW004": {
-            "display_name": "Aubrielle Gia Santos",
+            "display_name": "Gia",
             "official_name": "Aubrielle Gia Santos",
             "aliases": [
                 "Bree",
@@ -1177,10 +1177,10 @@ MEMBERS = {
     },
     
     "MW005": {
-                "display_name": "Audrielle Megan Zotomayor",
-                "official_name": "AM Zotomayor",
+                "display_name": "Am Am",
+                "official_name": "Audrielle Megan Zotomayor",
                 "aliases": [
-                    "Am Am",
+                    "Audrielle Megan",
                     "Am Am Zotomayor",
                     "Audrielle,"
                 ],
@@ -1349,7 +1349,7 @@ MEMBERS = {
     # =================================================
 
     "LLC001": {
-        "display_name": "Leah Jean Inson",
+        "display_name": "Leah Jean",
         "official_name": "Leah Jean Inson",
         "aliases": [
             "Leah",

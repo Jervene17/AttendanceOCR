@@ -1191,7 +1191,11 @@ def render_review_text(session):
 
     lines = []
 
+    service_date = session["service_date"]
+    day_name = datetime.strptime(service_date, "%Y-%m-%d").strftime("%A")
+
     lines.append(f"📊 {session['service']} Attendance Review")
+    lines.append(f"🗓 {day_name}, {service_date}")
     lines.append("")
 
     total_present = 0
