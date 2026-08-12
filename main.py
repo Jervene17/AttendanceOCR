@@ -86,48 +86,21 @@ STAGE_NEWCOMER = "newcomer"
 # Standing service options shown on the selection menu.
 SERVICE_OPTIONS = ["Predawn", "Sunday", "Wednesday", "Friday"]
 
+
+# =====================================================
+# Organizer / permission helpers
+# =====================================================
+
 def is_organizer(user_id):
+    """
+    Retro submissions are limited to a trusted allowlist (config.py:
+    ORGANIZER_IDS) since Sunday retro bypasses the department-checker
+    verification flow and lets the submitter enter onsite data
+    directly.
+    """
     return user_id in ORGANIZER_IDS
 
-async def send_service_menu(message, user_id):
 
-    keyboard = [
-        [InlineKeyboardButton(name, callback_data=f"svc:{name}")]
-        for name in SERVICE_OPTIONS
-    ]
-
-    keyboard.append(
-        [InlineKeyboardButton("✨ Special Service/Event", callback_data="svc:special")]
-    )
-
-    if is_organizer(user_id):
-        keyboard.append(
-            [InlineKeyboardButton("🕒 Retro Submission", callback_data="retro_menu")]
-        )
-
-    await message.reply_text(
-        "Attendance Bot V2 is ready.\n\n"
-        "Select a service:",
-        reply_markup=InlineKeyboardMarkup(keyboard),
-    )
-
-
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await send_service_menu(update.message, update.effective_user.id)
-
-async def retro(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-
-    if not is_organizer(user_id):
-        await update.message.reply_text(
-            "🚫 Retro submissions are limited to organizers."
-        )
-        return
-
-    await update.message.reply_text(
-        "🕒 Retro Submission — select the service:",
-        reply_markup=build_service_keyboard("rsvc"),
-    )
 # =====================================================
 # Session bootstrap
 # =====================================================
@@ -208,7 +181,7 @@ def build_service_keyboard(prefix):
     return InlineKeyboardMarkup(keyboard)
 
 
-async def send_service_menu(message):
+async def send_service_menu(message, user_id):
 
     keyboard = [
         [InlineKeyboardButton(name, callback_data=f"svc:{name}")]
@@ -219,9 +192,12 @@ async def send_service_menu(message):
         [InlineKeyboardButton("✨ Special Service/Event", callback_data="svc:special")]
     )
 
-    keyboard.append(
-        [InlineKeyboardButton("🕒 Retro Submission", callback_data="retro_menu")]
-    )
+    # Retro submissions are organizer-only, so the button is hidden
+    # entirely for anyone not on the ORGANIZER_IDS allowlist.
+    if is_organizer(user_id):
+        keyboard.append(
+            [InlineKeyboardButton("🕒 Retro Submission", callback_data="retro_menu")]
+        )
 
     await message.reply_text(
         "Attendance Bot V2 is ready.\n\n"
@@ -231,10 +207,19 @@ async def send_service_menu(message):
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await send_service_menu(update.message)
+    await send_service_menu(update.message, update.effective_user.id)
 
 
 async def retro(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    user_id = update.effective_user.id
+
+    if not is_organizer(user_id):
+        await update.message.reply_text(
+            "🚫 Retro submissions are limited to organizers."
+        )
+        return
+
     await update.message.reply_text(
         "🕒 Retro Submission — select the service:",
         reply_markup=build_service_keyboard("rsvc"),
@@ -385,7 +370,7 @@ async def receive_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-   # User previously tapped "Special Service/Event" and is now
+    # User previously tapped "Special Service/Event" and is now
     # typing the name of that service/event.
     if user_id in awaiting_special_service:
 
@@ -437,6 +422,10 @@ async def receive_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             is_retro=True,
         )
         return
+
+    if user_id not in user_sessions:
+        return
+
     session = user_sessions[user_id]
 
     # -----------------------------
@@ -565,125 +554,15 @@ async def done(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "🟢 ONLINE — Verification\n\n" + attendance_summary(result)
         )
 
-        # -----------------------------
-        # SUNDAY: hand off onsite attendance to department checkers
-        # -----------------------------
-        if session["service"] == "Sunday":
-
-            session["stage"] = STAGE_WAITING_CHECKERS
-
-            await notify_checkers(context, user_id, session)
-
-            pending_groups = sorted(
-                USER_GROUP_MAP[c] for c in session["checkers_pending"]
-            )
-
-            msg_lines = [
-                "✅ Online attendance completed.",
-                "",
-                "Onsite attendance will be collected from department checkers:",
-            ]
-            msg_lines += [f"• {g}" for g in pending_groups]
-
-            if session.get("checkers_failed"):
-                failed_groups = sorted(
-                    USER_GROUP_MAP[c] for c in session["checkers_failed"]
-                )
-                msg_lines.append("")
-                msg_lines.append(
-                    "⚠️ Could not reach: " + ", ".join(failed_groups)
-                    + " (they may need to message the bot first)."
-                )
-
-            msg_lines.append("")
-            msg_lines.append(
-                "You'll be notified as each department reports. "
-                "Type /done anytime to view the review with whatever "
-                "has been reported so far."
-            )
-
-            await update.message.reply_text("\n".join(msg_lines))
-
+        # Mandatory: resolve every unrecognized name to a specific
+        # known member before moving on, right here, automatically.
+        if session["unknown"]:
+            session["resolve_queue"] = sorted(session["unknown"])
+            session["resolve_continue"] = "post_online"
+            await advance_resolve_queue(update.message.reply_text, session)
             return
 
-        # -----------------------------
-        # ALL OTHER SERVICES: organizer uploads onsite directly
-        # -----------------------------
-        session["stage"] = STAGE_ONSITE
-
-        await update.message.reply_text(
-
-            "✅ Online attendance completed.\n\n"
-
-            "Now upload ONSITE screenshots, or type/paste names "
-
-            "(one per line) directly in chat.\n\n"
-
-            "When finished, type /done."
-
-        )
-
-        return
-
-    # -----------------------------
-        # SUNDAY (live only): hand off onsite attendance to department checkers
-        # -----------------------------
-        if session["service"] == "Sunday" and not session["is_retro"]:
-
-            session["stage"] = STAGE_WAITING_CHECKERS
-
-            await notify_checkers(context, user_id, session)
-
-            pending_groups = sorted(
-                USER_GROUP_MAP[c] for c in session["checkers_pending"]
-            )
-
-            msg_lines = [
-                "✅ Online attendance completed.",
-                "",
-                "Onsite attendance will be collected from department checkers:",
-            ]
-            msg_lines += [f"• {g}" for g in pending_groups]
-
-            if session.get("checkers_failed"):
-                failed_groups = sorted(
-                    USER_GROUP_MAP[c] for c in session["checkers_failed"]
-                )
-                msg_lines.append("")
-                msg_lines.append(
-                    "⚠️ Could not reach: " + ", ".join(failed_groups)
-                    + " (they may need to message the bot first)."
-                )
-
-            msg_lines.append("")
-            msg_lines.append(
-                "You'll be notified as each department reports. "
-                "Type /done anytime to view the review with whatever "
-                "has been reported so far."
-            )
-
-            await update.message.reply_text("\n".join(msg_lines))
-
-            return
-
-        # -----------------------------
-        # ALL OTHER SERVICES, and Sunday RETRO: organizer uploads
-        # onsite directly (no checker DMs for retro submissions)
-        # -----------------------------
-        session["stage"] = STAGE_ONSITE
-
-        await update.message.reply_text(
-
-            "✅ Online attendance completed.\n\n"
-
-            "Now upload ONSITE screenshots, or type/paste names "
-
-            "(one per line) directly in chat.\n\n"
-
-            "When finished, type /done."
-
-        )
-
+        await continue_after_online(update.message.reply_text, context, user_id, session)
         return
 
     # -----------------------------
@@ -756,10 +635,15 @@ async def done(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "🟡 ONSITE — Verification\n\n" + attendance_summary(result)
         )
 
+        # Mandatory unknown-name resolution, same as online.
+        if session["unknown"]:
+            session["resolve_queue"] = sorted(session["unknown"])
+            session["resolve_continue"] = "post_onsite"
+            await advance_resolve_queue(update.message.reply_text, session)
+            return
+
         session["stage"] = STAGE_REVIEW
-
-        await show_review(update, context)
-
+        await send_review(update.message.reply_text, session)
         return
 
     # -----------------------------
@@ -771,9 +655,120 @@ async def done(update: Update, context: ContextTypes.DEFAULT_TYPE):
         session["visitor_pending_name"] = None
         session["newcomer_pending_name"] = None
 
-        await show_review(update, context)
+        await send_review(update.message.reply_text, session)
 
         return
+
+
+# =====================================================
+# Unknown-name resolution (mandatory, right after OCR)
+# =====================================================
+# Every name OCR/text-matching couldn't recognize must be resolved
+# to a specific known member before the flow proceeds to the next
+# stage. Triggered automatically — not something the organizer has
+# to remember to click into. A "Skip" escape hatch exists per name
+# in case it's genuinely not a member (a visitor, a bad OCR read),
+# leaving that one name in the Unknown list for the review screen.
+
+def build_resolve_prompt_text(session):
+    name = session.get("resolving_text", "")
+    return f"❓ Unrecognized name: \"{name}\"\n\nWhich department do they belong to?"
+
+
+async def advance_resolve_queue(send_func, session):
+    """
+    Pops the next unresolved name and prompts for its department.
+    Returns True if a prompt was sent (still resolving), False if
+    the queue is now empty.
+    """
+
+    queue = session.get("resolve_queue")
+
+    if queue:
+        session["resolving_text"] = queue.pop(0)
+
+        await send_func(
+            text=build_resolve_prompt_text(session),
+            reply_markup=build_department_picker("adept")
+        )
+        return True
+
+    return False
+
+
+async def continue_after_online(send_func, context, user_id, session):
+
+    # -----------------------------
+    # SUNDAY (live only): hand off onsite attendance to
+    # department checkers. Sunday RETRO submissions skip this
+    # entirely — see the fallthrough branch below.
+    # -----------------------------
+    if session["service"] == "Sunday" and not session["is_retro"]:
+
+        session["stage"] = STAGE_WAITING_CHECKERS
+
+        await notify_checkers(context, user_id, session)
+
+        pending_groups = sorted(
+            USER_GROUP_MAP[c] for c in session["checkers_pending"]
+        )
+
+        msg_lines = [
+            "✅ Online attendance completed.",
+            "",
+            "Onsite attendance will be collected from department checkers:",
+        ]
+        msg_lines += [f"• {g}" for g in pending_groups]
+
+        if session.get("checkers_failed"):
+            failed_groups = sorted(
+                USER_GROUP_MAP[c] for c in session["checkers_failed"]
+            )
+            msg_lines.append("")
+            msg_lines.append(
+                "⚠️ Could not reach: " + ", ".join(failed_groups)
+                + " (they may need to message the bot first)."
+            )
+
+        msg_lines.append("")
+        msg_lines.append(
+            "You'll be notified as each department reports. "
+            "Type /done anytime to view the review with whatever "
+            "has been reported so far."
+        )
+
+        await send_func(text="\n".join(msg_lines))
+
+        return
+
+    # -----------------------------
+    # ALL OTHER SERVICES, and Sunday RETRO: organizer uploads
+    # onsite directly (no checker DMs go out for retro
+    # submissions).
+    # -----------------------------
+    session["stage"] = STAGE_ONSITE
+
+    await send_func(
+        text=(
+            "✅ Online attendance completed.\n\n"
+            "Now upload ONSITE screenshots, or type/paste names "
+            "(one per line) directly in chat.\n\n"
+            "When finished, type /done."
+        )
+    )
+
+
+async def send_review(send_func, session):
+    await send_func(
+        text=render_review_text(session),
+        reply_markup=build_review_keyboard(session)
+    )
+
+
+async def show_review(update, context):
+    user_id = update.effective_user.id
+    session = user_sessions[user_id]
+    await send_review(update.message.reply_text, session)
 
 
 # =====================================================
@@ -855,14 +850,80 @@ async def handle_checker_done(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     result = merge_results(*results_to_merge)
 
-    await finish_checker_report(update, context, user_id, checker, result)
+    # Mandatory unknown-name resolution for the checker too —
+    # restricted to their own department, so no department picker
+    # is needed, only the member list.
+    if result["unknown"]:
+        checker["resolve_queue"] = list(result["unknown"])
+        checker["pending_recognized"] = result["recognized"]
+        checker["resolved_extra"] = []
+        checker["still_unknown"] = []
+        await advance_checker_resolve_queue(update.message.reply_text, checker)
+        return
+
+    await finish_checker_report(context, user_id, checker, result, update.message.reply_text)
 
 
-async def finish_checker_report(update, context, checker_id, checker, result):
+# -----------------------------
+# Checker-side unknown-name resolution: restricted to their own
+# department's roster, so there's no department-picking step.
+# -----------------------------
+
+def build_checker_resolve_keyboard(group):
+
+    keyboard = [
+        [InlineKeyboardButton(member, callback_data=f"cassign:{member}")]
+        for member in MEMBER_LISTS.get(group, [])
+    ]
+
+    keyboard.append(
+        [InlineKeyboardButton("⏭ Skip (leave unresolved)", callback_data="cskip")]
+    )
+
+    return InlineKeyboardMarkup(keyboard)
+
+
+async def advance_checker_resolve_queue(send_func, checker):
+
+    queue = checker.get("resolve_queue")
+
+    if queue:
+        name = queue.pop(0)
+        checker["resolving_text"] = name
+
+        await send_func(
+            text=f"❓ Unrecognized name: \"{name}\"\n\nWhich {checker['group']} member is this?",
+            reply_markup=build_checker_resolve_keyboard(checker["group"])
+        )
+        return True
+
+    return False
+
+
+def pop_checker_resolved_result(checker):
+    """
+    Assembles the final OCR-shaped result dict from a checker's
+    resolve-queue bookkeeping, then clears those temporary fields.
+    """
+
+    recognized = checker.pop("pending_recognized", [])
+    recognized = recognized + [
+        {"display_name": m} for m in checker.pop("resolved_extra", [])
+    ]
+    unknown = checker.pop("still_unknown", [])
+    checker.pop("resolve_queue", None)
+
+    return {"recognized": recognized, "unknown": unknown}
+
+
+async def finish_checker_report(context, checker_id, checker, result, reply_func):
     """
     Merges a checker's OCR/text result into their organizer's
     session, marks the checker as done, and — once every checker has
     reported — auto-finalizes the onsite stage for the organizer.
+
+    reply_func sends the checker's own confirmation message (works
+    from either a message update or a callback query's message).
     """
 
     organizer_id = checker["organizer_id"]
@@ -872,9 +933,11 @@ async def finish_checker_report(update, context, checker_id, checker, result):
     checker_sessions.pop(checker_id, None)
 
     if not session:
-        await update.message.reply_text(
-            "The attendance session this was for is no longer active. "
-            "Your report was not saved."
+        await reply_func(
+            text=(
+                "The attendance session this was for is no longer active. "
+                "Your report was not saved."
+            )
         )
         return
 
@@ -884,8 +947,8 @@ async def finish_checker_report(update, context, checker_id, checker, result):
     session.setdefault("checkers_pending", set()).discard(checker_id)
     session.setdefault("checkers_done", set()).add(checker_id)
 
-    await update.message.reply_text(
-        f"✅ {group} attendance submitted ({reported_count}). Thank you!"
+    await reply_func(
+        text=f"✅ {group} attendance submitted ({reported_count}). Thank you!"
     )
 
     organizer_notify = functools.partial(context.bot.send_message, chat_id=organizer_id)
@@ -1025,17 +1088,6 @@ def get_member_info(name):
             }
 
     return None
-
-
-async def show_review(update, context):
-
-    user_id = update.effective_user.id
-    session = user_sessions[user_id]
-
-    await update.message.reply_text(
-        render_review_text(session),
-        reply_markup=build_review_keyboard(session)
-    )
 
 
 def render_review_text(session):
@@ -1338,6 +1390,10 @@ async def show_resolve_members(query, session, department):
         )
 
     keyboard.append(
+        [InlineKeyboardButton("⏭ Skip (leave unresolved)", callback_data="askip")]
+    )
+
+    keyboard.append(
         [InlineKeyboardButton("⬅ Departments", callback_data="resolve")]
     )
 
@@ -1453,6 +1509,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         return
 
+    # -----------------------------
+    # Retro submission menu (organizer-only)
+    # -----------------------------
     if action == "retro_menu":
 
         if not is_organizer(user_id):
@@ -1496,7 +1555,50 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
 
         return
-    
+
+    # -----------------------------
+    # Checker-side unknown-name resolution
+    # -----------------------------
+    if action.startswith("cassign:"):
+
+        member = action.split(":", 1)[1]
+
+        checker = checker_sessions.get(user_id)
+
+        if not checker:
+            return
+
+        checker.setdefault("resolved_extra", []).append(member)
+        checker.pop("resolving_text", None)
+
+        still_pending = await advance_checker_resolve_queue(query.message.reply_text, checker)
+
+        if not still_pending:
+            result = pop_checker_resolved_result(checker)
+            await finish_checker_report(context, user_id, checker, result, query.message.reply_text)
+
+        return
+
+    if action == "cskip":
+
+        checker = checker_sessions.get(user_id)
+
+        if not checker:
+            return
+
+        name = checker.pop("resolving_text", None)
+
+        if name:
+            checker.setdefault("still_unknown", []).append(name)
+
+        still_pending = await advance_checker_resolve_queue(query.message.reply_text, checker)
+
+        if not still_pending:
+            result = pop_checker_resolved_result(checker)
+            await finish_checker_report(context, user_id, checker, result, query.message.reply_text)
+
+        return
+
     if user_id not in user_sessions:
 
         await query.edit_message_text(
@@ -1538,6 +1640,33 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         return
 
+    elif action == "askip":
+
+        session = user_sessions[user_id]
+
+        session.pop("resolving_text", None)
+
+        if "resolve_continue" in session:
+
+            still_pending = await advance_resolve_queue(query.message.reply_text, session)
+
+            if not still_pending:
+                tag = session.pop("resolve_continue", None)
+                session.pop("resolve_queue", None)
+
+                if tag == "post_online":
+                    await continue_after_online(query.message.reply_text, context, user_id, session)
+
+                elif tag == "post_onsite":
+                    session["stage"] = STAGE_REVIEW
+                    await send_review(query.message.reply_text, session)
+
+            return
+
+        await show_review_callback(query, session)
+
+        return
+
     elif action.startswith("aassign:"):
 
         member = action.split(":", 1)[1]
@@ -1563,6 +1692,23 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 session["online_members"].add(member)
 
         session.pop("resolving_text", None)
+
+        if "resolve_continue" in session:
+
+            still_pending = await advance_resolve_queue(query.message.reply_text, session)
+
+            if not still_pending:
+                tag = session.pop("resolve_continue", None)
+                session.pop("resolve_queue", None)
+
+                if tag == "post_online":
+                    await continue_after_online(query.message.reply_text, context, user_id, session)
+
+                elif tag == "post_onsite":
+                    session["stage"] = STAGE_REVIEW
+                    await send_review(query.message.reply_text, session)
+
+            return
 
         await show_review_callback(query, session)
 
@@ -1732,8 +1878,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def skip(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     /skip — for a Sunday checker: "nobody from my group attended
-    onsite". For an organizer mid-onsite (non-Sunday): "nobody
-    attended onsite at all", moves straight to review.
+    onsite". For an organizer mid-onsite (non-Sunday, or Sunday
+    retro), "nobody attended onsite at all", moves straight to
+    review.
     """
 
     user_id = update.effective_user.id
@@ -1741,8 +1888,9 @@ async def skip(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if user_id in checker_sessions:
         checker = checker_sessions[user_id]
         await finish_checker_report(
-            update, context, user_id, checker,
-            {"recognized": [], "unknown": []}
+            context, user_id, checker,
+            {"recognized": [], "unknown": []},
+            update.message.reply_text,
         )
         return
 
@@ -1777,7 +1925,7 @@ async def error_handler(update, context):
     traceback.print_exception(type(context.error), context.error, context.error.__traceback__)
 
 
-print("=== BUILD 3 ===")
+print("=== BUILD 4 ===")
 app = ApplicationBuilder().token(BOT_TOKEN).build()
 
 app.add_handler(CommandHandler("start", start))
@@ -1786,9 +1934,9 @@ app.add_handler(CommandHandler("predawn", predawn))
 app.add_handler(CommandHandler("sunday", sunday))
 app.add_handler(CommandHandler("wednesday", wednesday))
 app.add_handler(CommandHandler("friday", friday))
+app.add_handler(CommandHandler("retro", retro))
 app.add_handler(CommandHandler("done", done))
 app.add_handler(CommandHandler("skip", skip))
-app.add_handler(CommandHandler("retro", retro))
 
 app.add_handler(
     MessageHandler(
