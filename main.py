@@ -554,12 +554,12 @@ async def done(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "🟢 ONLINE — Verification\n\n" + attendance_summary(result)
         )
 
-        # Mandatory: resolve every unrecognized name to a specific
-        # known member before moving on, right here, automatically.
+        # Some OCR "unknown" reads are just noise, not real names —
+        # let the organizer pick which ones actually need to be
+        # matched to a member. Anything left unselected is ignored.
         if session["unknown"]:
-            session["resolve_queue"] = sorted(session["unknown"])
             session["resolve_continue"] = "post_online"
-            await advance_resolve_queue(update.message.reply_text, session)
+            await start_verify_selection(update.message.reply_text, session)
             return
 
         await continue_after_online(update.message.reply_text, context, user_id, session)
@@ -635,11 +635,11 @@ async def done(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "🟡 ONSITE — Verification\n\n" + attendance_summary(result)
         )
 
-        # Mandatory unknown-name resolution, same as online.
+        # Same selection step as online: pick which unrecognized
+        # names actually need matching; the rest are ignored.
         if session["unknown"]:
-            session["resolve_queue"] = sorted(session["unknown"])
             session["resolve_continue"] = "post_onsite"
-            await advance_resolve_queue(update.message.reply_text, session)
+            await start_verify_selection(update.message.reply_text, session)
             return
 
         session["stage"] = STAGE_REVIEW
@@ -661,14 +661,64 @@ async def done(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # =====================================================
-# Unknown-name resolution (mandatory, right after OCR)
+# Unknown-name resolution (right after OCR)
 # =====================================================
-# Every name OCR/text-matching couldn't recognize must be resolved
-# to a specific known member before the flow proceeds to the next
-# stage. Triggered automatically — not something the organizer has
-# to remember to click into. A "Skip" escape hatch exists per name
-# in case it's genuinely not a member (a visitor, a bad OCR read),
+# Not every OCR "unknown" is actually a name that needs verifying —
+# some are just noise. So first, the organizer picks which unknown
+# entries are worth resolving; anything left unselected is ignored
+# entirely. Only the selected ones then go through the mandatory
+# department -> specific-member matching flow before the stage can
+# proceed. A "Skip" escape hatch also exists per selected name in
+# case it's genuinely not a member (a visitor, a bad OCR read),
 # leaving that one name in the Unknown list for the review screen.
+
+def build_verify_selection_text(session):
+    return (
+        "❓ Some names weren't recognized.\n\n"
+        "Select which ones actually need to be matched to a member — "
+        "anything left unselected will be ignored."
+    )
+
+
+def build_verify_selection_keyboard(session):
+
+    keyboard = []
+
+    for i, name in enumerate(session["verify_candidates"]):
+
+        checked = name in session["verify_selected"]
+
+        keyboard.append(
+            [InlineKeyboardButton(
+                f"{'☑️' if checked else '☐'} {name}",
+                callback_data=f"vtoggle:{i}"
+            )]
+        )
+
+    keyboard.append(
+        [
+            InlineKeyboardButton("☑️ Select All", callback_data="vall"),
+            InlineKeyboardButton("☐ Clear All", callback_data="vnone"),
+        ]
+    )
+
+    keyboard.append(
+        [InlineKeyboardButton("✅ Confirm Selection", callback_data="vconfirm")]
+    )
+
+    return InlineKeyboardMarkup(keyboard)
+
+
+async def start_verify_selection(send_func, session):
+
+    session["verify_candidates"] = sorted(session["unknown"])
+    session["verify_selected"] = set()
+
+    await send_func(
+        text=build_verify_selection_text(session),
+        reply_markup=build_verify_selection_keyboard(session)
+    )
+
 
 def build_resolve_prompt_text(session):
     name = session.get("resolving_text", "")
@@ -850,24 +900,64 @@ async def handle_checker_done(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     result = merge_results(*results_to_merge)
 
-    # Mandatory unknown-name resolution for the checker too —
-    # restricted to their own department, so no department picker
-    # is needed, only the member list.
+    # Same idea as the organizer: let the checker pick which
+    # unrecognized names actually need matching; the rest are
+    # ignored (dropped entirely, not even logged as unknown).
     if result["unknown"]:
-        checker["resolve_queue"] = list(result["unknown"])
         checker["pending_recognized"] = result["recognized"]
-        checker["resolved_extra"] = []
-        checker["still_unknown"] = []
-        await advance_checker_resolve_queue(update.message.reply_text, checker)
+        checker["verify_candidates"] = sorted(result["unknown"])
+        checker["verify_selected"] = set()
+        await update.message.reply_text(
+            build_checker_verify_text(checker),
+            reply_markup=build_checker_verify_keyboard(checker)
+        )
         return
 
     await finish_checker_report(context, user_id, checker, result, update.message.reply_text)
 
 
 # -----------------------------
-# Checker-side unknown-name resolution: restricted to their own
-# department's roster, so there's no department-picking step.
+# Checker-side unknown-name selection + resolution: restricted to
+# their own department's roster, so there's no department-picking
+# step, only the member list.
 # -----------------------------
+
+def build_checker_verify_text(checker):
+    return (
+        "❓ Some names weren't recognized.\n\n"
+        "Select which ones actually need to be matched to a member — "
+        "anything left unselected will be ignored."
+    )
+
+
+def build_checker_verify_keyboard(checker):
+
+    keyboard = []
+
+    for i, name in enumerate(checker["verify_candidates"]):
+
+        checked = name in checker["verify_selected"]
+
+        keyboard.append(
+            [InlineKeyboardButton(
+                f"{'☑️' if checked else '☐'} {name}",
+                callback_data=f"cvtoggle:{i}"
+            )]
+        )
+
+    keyboard.append(
+        [
+            InlineKeyboardButton("☑️ Select All", callback_data="cvall"),
+            InlineKeyboardButton("☐ Clear All", callback_data="cvnone"),
+        ]
+    )
+
+    keyboard.append(
+        [InlineKeyboardButton("✅ Confirm Selection", callback_data="cvconfirm")]
+    )
+
+    return InlineKeyboardMarkup(keyboard)
+
 
 def build_checker_resolve_keyboard(group):
 
@@ -1599,11 +1689,196 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         return
 
+    # -----------------------------
+    # Checker-side: which unknown names actually need verifying
+    # -----------------------------
+    if action.startswith("cvtoggle:"):
+
+        checker = checker_sessions.get(user_id)
+
+        if not checker or "verify_candidates" not in checker:
+            return
+
+        idx = int(action.split(":", 1)[1])
+        name = checker["verify_candidates"][idx]
+        selected = checker.setdefault("verify_selected", set())
+
+        if name in selected:
+            selected.discard(name)
+        else:
+            selected.add(name)
+
+        await query.edit_message_text(
+            build_checker_verify_text(checker),
+            reply_markup=build_checker_verify_keyboard(checker)
+        )
+
+        return
+
+    if action == "cvall":
+
+        checker = checker_sessions.get(user_id)
+
+        if not checker or "verify_candidates" not in checker:
+            return
+
+        checker["verify_selected"] = set(checker["verify_candidates"])
+
+        await query.edit_message_text(
+            build_checker_verify_text(checker),
+            reply_markup=build_checker_verify_keyboard(checker)
+        )
+
+        return
+
+    if action == "cvnone":
+
+        checker = checker_sessions.get(user_id)
+
+        if not checker or "verify_candidates" not in checker:
+            return
+
+        checker["verify_selected"] = set()
+
+        await query.edit_message_text(
+            build_checker_verify_text(checker),
+            reply_markup=build_checker_verify_keyboard(checker)
+        )
+
+        return
+
+    if action == "cvconfirm":
+
+        checker = checker_sessions.get(user_id)
+
+        if not checker or "verify_candidates" not in checker:
+            return
+
+        candidates = checker.pop("verify_candidates", [])
+        selected = checker.pop("verify_selected", set())
+        ignored_count = len(candidates) - len(selected)
+
+        checker["resolve_queue"] = [n for n in candidates if n in selected]
+        checker["resolved_extra"] = []
+        checker["still_unknown"] = []
+
+        await query.edit_message_text(
+            f"✅ {len(selected)} name(s) selected for verification. "
+            f"{ignored_count} ignored."
+        )
+
+        if checker["resolve_queue"]:
+            await advance_checker_resolve_queue(query.message.reply_text, checker)
+        else:
+            result = pop_checker_resolved_result(checker)
+            await finish_checker_report(context, user_id, checker, result, query.message.reply_text)
+
+        return
+
     if user_id not in user_sessions:
 
         await query.edit_message_text(
             "This attendance session has already ended."
         )
+        return
+
+    # -----------------------------
+    # Organizer-side: which unknown names actually need verifying
+    # -----------------------------
+    if action.startswith("vtoggle:"):
+
+        session = user_sessions[user_id]
+
+        if "verify_candidates" not in session:
+            return
+
+        idx = int(action.split(":", 1)[1])
+        name = session["verify_candidates"][idx]
+        selected = session.setdefault("verify_selected", set())
+
+        if name in selected:
+            selected.discard(name)
+        else:
+            selected.add(name)
+
+        await query.edit_message_text(
+            build_verify_selection_text(session),
+            reply_markup=build_verify_selection_keyboard(session)
+        )
+
+        return
+
+    if action == "vall":
+
+        session = user_sessions[user_id]
+
+        if "verify_candidates" not in session:
+            return
+
+        session["verify_selected"] = set(session["verify_candidates"])
+
+        await query.edit_message_text(
+            build_verify_selection_text(session),
+            reply_markup=build_verify_selection_keyboard(session)
+        )
+
+        return
+
+    if action == "vnone":
+
+        session = user_sessions[user_id]
+
+        if "verify_candidates" not in session:
+            return
+
+        session["verify_selected"] = set()
+
+        await query.edit_message_text(
+            build_verify_selection_text(session),
+            reply_markup=build_verify_selection_keyboard(session)
+        )
+
+        return
+
+    if action == "vconfirm":
+
+        session = user_sessions[user_id]
+
+        if "verify_candidates" not in session:
+            return
+
+        candidates = session.pop("verify_candidates", [])
+        selected = session.pop("verify_selected", set())
+        ignored = [n for n in candidates if n not in selected]
+
+        # Ignored names are dropped entirely — not resolved, not
+        # left sitting in the Unknown list either.
+        for name in ignored:
+            session["unknown"].discard(name)
+            session["unknown_sources"].pop(name, None)
+
+        await query.edit_message_text(
+            f"✅ {len(selected)} name(s) selected for verification. "
+            f"{len(ignored)} ignored."
+        )
+
+        if selected:
+            session["resolve_queue"] = sorted(selected)
+            await advance_resolve_queue(query.message.reply_text, session)
+            return
+
+        # Nothing selected — nothing to resolve, proceed straight
+        # to whatever comes after this stage.
+        tag = session.pop("resolve_continue", None)
+        session.pop("resolve_queue", None)
+
+        if tag == "post_online":
+            await continue_after_online(query.message.reply_text, context, user_id, session)
+
+        elif tag == "post_onsite":
+            session["stage"] = STAGE_REVIEW
+            await send_review(query.message.reply_text, session)
+
         return
 
     if action == "verify":
