@@ -946,6 +946,7 @@ MEMBERS = {
             "Annes Alonsagay",
             "Joannes Resurreccion",
             "Joannes Resurreccion Alonsagay",
+            "Joan",
         ],
         "department": CAREER_FEMALES,
         "status": ACTIVE,
