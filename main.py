@@ -6,6 +6,7 @@ print("=" * 50)
 import os
 import asyncio
 import functools
+import html
 
 print(os.getcwd())
 
@@ -811,7 +812,8 @@ async def continue_after_online(send_func, context, user_id, session):
 async def send_review(send_func, session):
     await send_func(
         text=render_review_text(session),
-        reply_markup=build_review_keyboard(session)
+        reply_markup=build_review_keyboard(session),
+        parse_mode="HTML",
     )
 
 
@@ -1087,7 +1089,8 @@ async def finalize_sunday_onsite(reply_func, session, forced=False):
 
     await reply_func(
         text=render_review_text(session),
-        reply_markup=build_review_keyboard(session)
+        reply_markup=build_review_keyboard(session),
+        parse_mode="HTML",
     )
 
 
@@ -1194,11 +1197,13 @@ def render_review_text(session):
     service_date = session["service_date"]
     day_name = datetime.strptime(service_date, "%Y-%m-%d").strftime("%A")
 
-    lines.append(f"📊 {session['service']} Attendance Review")
+    lines.append(f"📊 {html.escape(session['service'])} Attendance Review")
     lines.append(f"🗓 {day_name}, {service_date}")
     lines.append("")
 
     total_present = 0
+    total_online = 0
+    total_onsite = 0
 
     for i, (department, members) in enumerate(MEMBER_LISTS.items()):
 
@@ -1212,49 +1217,59 @@ def render_review_text(session):
 
         total_present += len(present_members)
 
-        lines.append(f"{color} {department}: {len(present_members)}")
+        lines.append(f"{color} {html.escape(department)}: {len(present_members)}")
 
         for member in present_members:
 
             if member in onsite_members:
-                tag = "Onsite"
+                # Onsite attendees are bolded so they stand out at a
+                # glance against the Online ones.
+                tag_display = "<b>Onsite</b>"
+                total_onsite += 1
             elif member in online_members:
-                tag = "Online"
+                tag_display = "Online"
+                total_online += 1
             else:
-                tag = "Onsite"
+                # No explicit online/onsite source recorded (e.g.
+                # added manually via "Verify Department") — default
+                # to Onsite, same as before.
+                tag_display = "<b>Onsite</b>"
+                total_onsite += 1
 
-            lines.append(f"   • {member} ({tag})")
+            lines.append(f"   • {html.escape(member)} ({tag_display})")
 
     lines.append("")
     lines.append(f"👥 Total Present: {total_present}")
+    lines.append(f"💻 Total Online: {total_online}")
+    lines.append(f"🏛 Total Onsite: {total_onsite}")
 
     pending_checkers = session.get("checkers_pending")
 
     if pending_checkers:
         pending_groups = sorted(USER_GROUP_MAP[c] for c in pending_checkers)
         lines.append("")
-        lines.append("⏳ Awaiting onsite report from: " + ", ".join(pending_groups))
+        lines.append("⏳ Awaiting onsite report from: " + html.escape(", ".join(pending_groups)))
 
     if session["unknown"]:
         lines.append("")
         lines.append("❓ Unknown Names")
 
         for name in sorted(session["unknown"]):
-            lines.append(f"• {name}")
+            lines.append(f"• {html.escape(name)}")
 
     if session["visitors"]:
         lines.append("")
         lines.append("👥 Visitors")
 
         for visitor in session["visitors"]:
-            lines.append(f"• {visitor['name']} (from {visitor['from']})")
+            lines.append(f"• {html.escape(visitor['name'])} (from {html.escape(visitor['from'])})")
 
     if session["newcomers"]:
         lines.append("")
         lines.append("🌱 Newcomers")
 
         for newcomer in session["newcomers"]:
-            lines.append(f"• {newcomer['name']} ({newcomer['department']})")
+            lines.append(f"• {html.escape(newcomer['name'])} ({html.escape(newcomer['department'])})")
 
     return "\n".join(lines)
 
@@ -1497,7 +1512,8 @@ async def show_review_callback(query, session):
 
     await query.edit_message_text(
         render_review_text(session),
-        reply_markup=build_review_keyboard(session)
+        reply_markup=build_review_keyboard(session),
+        parse_mode="HTML",
     )
 
 
