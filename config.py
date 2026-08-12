@@ -138,13 +138,13 @@ MEMBER_LISTS = {
         "Dr Kristine",
         "Milca",
         "M Saeyoung",
-        "Joann",
+        "Joannes",
         "M Ju Nara",
         "M Sarah",
         "M Azzel",
         "P Auda",
-        "Nelissa"
         "Reisa",
+        "Nelissa",
     ],
 
     "CAMPUS FEMALES": [
@@ -170,7 +170,6 @@ MEMBER_LISTS = {
         "Cheyserr",
         "M Saeyoung",
         "Alma Joy",
-        "Andrew",
     ],
 
     "Newcomers": [
@@ -196,7 +195,7 @@ MEMBER_LISTS = {
         "Milky Way": [
             "Victor Liponhay",
             "Eliana Given Venturina",
-            "Vanna Amelie Dolom",
+            "Vanna Dolom",
             "Aubrielle Gia Santos",
             "Am Zotomayor",
         ],
@@ -354,6 +353,7 @@ MEMBERS = {
             "Jervene Venturina",
             "M Jervene",
             "M.Jervene",
+            "Philippines_Jervene Venturina",
         ],
         "department": FAMILY,
         "status": ACTIVE,
@@ -1497,30 +1497,6 @@ MEMBERS = {
             "sort_order": 3,
         },
 }
-"LVC003": {
-        "display_name": "Diane",
-        ...
-        "sort_order": 3,
-    },
-}
-
-# =====================================================
-# Department Rosters (auto-derived from MEMBERS — edit
-# MEMBERS to change a roster, never this dict directly)
-# =====================================================
-
-MEMBER_LISTS = {}
-
-for _member_id, _member in sorted(
-    MEMBERS.items(), key=lambda kv: (kv[1]["department"], kv[1]["sort_order"])
-):
-    MEMBER_LISTS.setdefault(_member["department"], []).append(_member["display_name"])
-
-MEMBER_LISTS["Newcomers"] = [
-    "NC RD",
-    "Kezia Aquino",
-    "NC HM",
-]
 
 # =====================================================
 # Helper Functions
