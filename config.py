@@ -942,15 +942,14 @@ MEMBERS = {
         "sort_order": 23,
     },
     "CrF024": {
-        "display_name": "Joan",
+        "display_name": "Joannes",
         "official_name": "Joannes Alonsagay",
         "aliases": [
-            "Joannes",
+            "Joan",
             "Joannes Alonsagay",
             "Annes Alonsagay",
             "Joannes Resurreccion",
             "Joannes Resurreccion Alonsagay",
-            "Joan",
         ],
         "department": CAREER_FEMALES,
         "status": ACTIVE,
