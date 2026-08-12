@@ -1183,38 +1183,17 @@ def get_member_info(name):
 def render_review_text(session):
 
     recognized = session["recognized"]
+    online_members = session["online_members"]
+    onsite_members = session["onsite_members"]
 
     lines = []
 
     lines.append(f"📊 {session['service']} Attendance Review")
     lines.append("")
 
-    total_expected = 0
     total_present = 0
 
     for department, members in MEMBER_LISTS.items():
-
-        expected = len(members)
-
-        present = sum(
-            1
-            for member in members
-            if member in recognized
-        )
-
-        total_expected += expected
-        total_present += present
-
-        if present == expected:
-            icon = "🟢"
-        elif present == 0:
-            icon = "🔴"
-        else:
-            icon = "🟡"
-
-        lines.append(
-            f"{icon} {department}: {present}/{expected}"
-        )
 
         present_members = [
             member_name
@@ -1222,12 +1201,23 @@ def render_review_text(session):
             if member_name in recognized
         ]
 
-        if present_members:
-            for member in present_members:
-                lines.append(f"   • {member}")
+        total_present += len(present_members)
+
+        lines.append(f"{department}: {len(present_members)}")
+
+        for member in present_members:
+
+            if member in onsite_members:
+                tag = "Onsite"
+            elif member in online_members:
+                tag = "Online"
+            else:
+                tag = "Onsite"
+
+            lines.append(f"   • {member} ({tag})")
 
     lines.append("")
-    lines.append(f"👥 Total Present: {total_present}/{total_expected}")
+    lines.append(f"👥 Total Present: {total_present}")
 
     pending_checkers = session.get("checkers_pending")
 
@@ -1258,7 +1248,6 @@ def render_review_text(session):
             lines.append(f"• {newcomer['name']} ({newcomer['department']})")
 
     return "\n".join(lines)
-
 
 def build_review_keyboard(session):
 
