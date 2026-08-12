@@ -81,121 +81,7 @@ USER_NAMES = {
     515714808: "Jervene",
 }
 
-# =====================================================
-# Department Members
-# =====================================================
 
-MEMBER_LISTS = {
-
-    "FAMILY": [
-        "Fatima",
-        "Vangie",
-        "M Ru",
-        "M Jhay",
-        "Dcns Frances",
-        "Shayne",
-        "Eldress Issa",
-        "Hannah",
-        "Dcn Ian",
-        "M Jervene",
-        "Jessie",
-        "Almen",
-        "Dcn Probo",
-        "Fernan",
-        "Jiboy",
-        "Riza",
-        "Lavinia",
-        "Iven",
-    ],
-
-    "CAREER MALES": [
-        "Jabs",
-        "Xander",
-        "Franz",
-        "Daniel",
-        "Venancio",
-        "Gideon",
-    ],
-
-    "CAREER FEMALES": [
-        "Shaja",
-        "Grace",
-        "Daryl",
-        "Clarice",
-        "Aliza",
-        "Anica",
-        "Mel",
-        "Andrea",
-        "Angel",
-        "Inia",
-        "M Rose",
-        "Vicky",
-        "Donna",
-        "D Rue",
-        "PP Bam",
-        "Zhandra",
-        "Trina",
-        "Dr Kristine",
-        "Milca",
-        "M Saeyoung",
-        "Joannes",
-        "M Ju Nara",
-        "M Sarah",
-        "M Azzel",
-        "P Auda"
-    ],
-
-    "CAMPUS FEMALES": [
-        "Divine",
-        "Marinell",
-    ],
-
-    "JS": [
-        "MCor",
-        "Tita Merlita",
-        "Grace - Japan",
-        "Emeru",
-        "Michelle",
-        "Edilyn",
-        "Raquel",
-        "Florelyn",
-    ],
-
-    "OPM": [
-        "John Carlo Rucero",
-        "Cherry Na",
-        "Miae Park",
-        "Cheyserr Lamayra",
-        "M Saeyoung",
-        "Alma Joy",
-    ],
-
-    "Newcomers": [
-        "NC RD",
-        "Kezia Aquino",
-        "NC HM",
-    ],
-
-    "LLC": [
-        "Leah Jean Inson",
-        "Therese Marie Po",
-        "Shaina Fatima Inson",
-        "Rose Daisy Lemu",
-        "Ria",
-        "Irene Vicerra",
-    ],
-
-    "LVC": [
-        "Cynthia Aquino",
-    ],
-        "Milky Way": [
-            "Victor Liponhay",
-            "Eliana Given Venturina",
-            "Vanna Dolom",
-            "Aubrielle Gia Santos"
-            "Am Zotomayor"
-        ],
-}
 # =====================================================
 # Master Member Registry
 # =====================================================
@@ -1184,7 +1070,7 @@ MEMBERS = {
             "attendance": DEFAULT_ATTENDANCE.copy(),
             "sort_order": 4,
     },
-    
+
     "MW005": {
                 "display_name": "Audrielle Zotomayor",
                 "official_name": "AM Zotomayor",
