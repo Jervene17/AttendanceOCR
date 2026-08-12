@@ -1530,6 +1530,16 @@ async def submit_attendance(session):
 
         })
 
+    visitors_payload = [
+        f"{visitor['name']} (from {visitor['from']})"
+        for visitor in session["visitors"]
+    ]
+
+    newcomers_payload = [
+        f"{newcomer['name']} ({newcomer['department']})"
+        for newcomer in session["newcomers"]
+    ]
+
     payload = {
 
         "service": session["service"],
@@ -1538,9 +1548,9 @@ async def submit_attendance(session):
 
         "members": members,
 
-        "visitors": session["visitors"],
+        "visitors": visitors_payload,
 
-        "newcomers": session["newcomers"],
+        "newcomers": newcomers_payload,
 
     }
 
