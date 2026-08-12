@@ -1216,14 +1216,14 @@ def render_review_text(session):
             f"{icon} {department}: {present}/{expected}"
         )
 
-        missing = [
+        present_members = [
             member_name
             for member_name in members
-            if member_name not in recognized
+            if member_name in recognized
         ]
 
-        if missing:
-            for member in missing:
+        if present_members:
+            for member in present_members:
                 lines.append(f"   • {member}")
 
     lines.append("")

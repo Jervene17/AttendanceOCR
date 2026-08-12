@@ -774,6 +774,7 @@ MEMBERS = {
             "Rue",
             "Rue Narra",
             "Rubilyn Narra",
+            "RA Narra"
         ],
         "department": CAREER_FEMALES,
         "status": ACTIVE,
@@ -1175,7 +1176,7 @@ MEMBERS = {
             "status": ACTIVE,
             "attendance": DEFAULT_ATTENDANCE.copy(),
             "sort_order": 4,
-        },
+    },
     "MW005": {
                 "display_name": "AM Zotomayor",
                 "official_name": "AM Zotomayor",
@@ -1187,7 +1188,7 @@ MEMBERS = {
                 "status": ACTIVE,
                 "attendance": DEFAULT_ATTENDANCE.copy(),
                 "sort_order": 5,
-            },
+    },
         
 
     # =================================================
