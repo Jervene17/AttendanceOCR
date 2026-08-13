@@ -87,6 +87,10 @@ STAGE_NEWCOMER = "newcomer"
 # Standing service options shown on the selection menu.
 SERVICE_OPTIONS = ["Predawn", "Sunday", "Wednesday", "Friday"]
 
+# Colors cycled through for each department's bullet in the review
+# summary — purely visual separation, not a status indicator.
+DEPARTMENT_COLORS = ["🔴", "🟠", "🟡", "🟢", "🔵", "🟣", "🟤"]
+
 
 # =====================================================
 # Organizer / permission helpers
@@ -148,7 +152,9 @@ async def begin_session(user_id, service, reply_func, service_date=None, is_retr
         "newcomers": [],
         "visitors": [],
         "visitor_pending_name": None,
+        "visitor_pending_from": None,
         "newcomer_pending_name": None,
+        "newcomer_pending_department": None,
 
         # Department verification
         "current_department": None,
@@ -430,50 +436,56 @@ async def receive_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     session = user_sessions[user_id]
 
     # -----------------------------
-    # VISITOR NAME / "FROM" ENTRY
+    # VISITOR NAME / "FROM" / SOURCE ENTRY
     # -----------------------------
     if session["stage"] == STAGE_VISITOR:
 
-        name = text.strip()
+        typed = text.strip()
 
-        if not name:
+        if not typed:
             return
 
         if session.get("visitor_pending_name") is None:
 
-            session["visitor_pending_name"] = name
+            session["visitor_pending_name"] = typed
 
             await update.message.reply_text(
-                f"The visitor \"{name}\" is from?"
+                f"The visitor \"{typed}\" is from?"
+            )
+
+        elif session.get("visitor_pending_from") is None:
+
+            session["visitor_pending_from"] = typed
+
+            await update.message.reply_text(
+                f"Was {session['visitor_pending_name']} Online or Onsite?",
+                reply_markup=InlineKeyboardMarkup([
+                    [
+                        InlineKeyboardButton("💻 Online", callback_data="vsrc:Online"),
+                        InlineKeyboardButton("🏛 Onsite", callback_data="vsrc:Onsite"),
+                    ]
+                ])
             )
 
         else:
 
-            pending_name = session["visitor_pending_name"]
-
-            session["visitors"].append({
-                "name": pending_name,
-                "from": name,
-            })
-
-            session["visitor_pending_name"] = None
-
+            # Name and "from" are both captured — we're just
+            # waiting on the Online/Onsite button tap.
             await update.message.reply_text(
-                f"✅ Visitor added: {pending_name} (from {name})\n\n"
-                "Type another visitor's name, or /done to return to the review."
+                "Please tap Online or Onsite above, or /done to return to the review."
             )
 
         return
 
     # -----------------------------
-    # NEWCOMER NAME ENTRY
+    # NEWCOMER NAME / DEPARTMENT / SOURCE ENTRY
     # -----------------------------
     if session["stage"] == STAGE_NEWCOMER:
 
         if session.get("newcomer_pending_name") is not None:
 
             await update.message.reply_text(
-                "Please choose a department using the buttons above, "
+                "Please choose an option using the buttons above, "
                 "or type /done to return to the review."
             )
             return
@@ -654,7 +666,9 @@ async def done(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         session["stage"] = STAGE_REVIEW
         session["visitor_pending_name"] = None
+        session["visitor_pending_from"] = None
         session["newcomer_pending_name"] = None
+        session["newcomer_pending_department"] = None
 
         await send_review(update.message.reply_text, session)
 
@@ -672,6 +686,10 @@ async def done(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # proceed. A "Skip" escape hatch also exists per selected name in
 # case it's genuinely not a member (a visitor, a bad OCR read),
 # leaving that one name in the Unknown list for the review screen.
+#
+# Each name can be matched to MORE THAN ONE member — for the case
+# where two (or three) people are sharing a single Zoom account —
+# via "➕ Add Another Member" before confirming Done.
 
 def build_verify_selection_text(session):
     return (
@@ -737,6 +755,7 @@ async def advance_resolve_queue(send_func, session):
 
     if queue:
         session["resolving_text"] = queue.pop(0)
+        session["resolve_added_members"] = set()
 
         await send_func(
             text=build_resolve_prompt_text(session),
@@ -1183,9 +1202,6 @@ def get_member_info(name):
     return None
 
 
-DEPARTMENT_COLORS = ["🔴", "🟠", "🟡", "🟢", "🔵", "🟣", "🟤"]
-
-
 def render_review_text(session):
 
     recognized = session["recognized"]
@@ -1262,16 +1278,25 @@ def render_review_text(session):
         lines.append("👥 Visitors")
 
         for visitor in session["visitors"]:
-            lines.append(f"• {html.escape(visitor['name'])} (from {html.escape(visitor['from'])})")
+            source = visitor.get("source", "")
+            source_part = f", {html.escape(source)}" if source else ""
+            lines.append(
+                f"• {html.escape(visitor['name'])} (from {html.escape(visitor['from'])}{source_part})"
+            )
 
     if session["newcomers"]:
         lines.append("")
         lines.append("🌱 Newcomers")
 
         for newcomer in session["newcomers"]:
-            lines.append(f"• {html.escape(newcomer['name'])} ({html.escape(newcomer['department'])})")
+            source = newcomer.get("source", "")
+            source_part = f", {html.escape(source)}" if source else ""
+            lines.append(
+                f"• {html.escape(newcomer['name'])} ({html.escape(newcomer['department'])}{source_part})"
+            )
 
     return "\n".join(lines)
+
 
 def build_review_keyboard(session):
 
@@ -1486,10 +1511,14 @@ async def show_resolve_departments(query, session):
 async def show_resolve_members(query, session, department):
 
     keyboard = []
+    added = session.get("resolve_added_members", set())
 
     for member in MEMBER_LISTS[department]:
+
+        label = f"✅ {member}" if member in added else member
+
         keyboard.append(
-            [InlineKeyboardButton(member, callback_data=f"aassign:{member}")]
+            [InlineKeyboardButton(label, callback_data=f"aassign:{member}")]
         )
 
     keyboard.append(
@@ -1504,6 +1533,38 @@ async def show_resolve_members(query, session, department):
 
     await query.edit_message_text(
         f"Resolving: \"{text}\"\n\n{department} — who is this?",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
+
+async def show_resolve_confirm(query, session):
+    """
+    Shown after at least one member has been matched to the current
+    unrecognized name — lets the organizer add another member (for
+    two/three people sharing one Zoom account) or confirm Done.
+    """
+
+    added = session.get("resolve_added_members", set())
+    text = session.get("resolving_text", "")
+
+    lines = [f"Resolving: \"{text}\"", "", "Matched to:"]
+
+    for member in sorted(added):
+        lines.append(f"• {member}")
+
+    lines.append("")
+    lines.append(
+        "If another person is sharing this same account, add them too. "
+        "Otherwise, tap Done."
+    )
+
+    keyboard = [
+        [InlineKeyboardButton("➕ Add Another Member", callback_data="raddmore")],
+        [InlineKeyboardButton("✅ Done", callback_data="adone")],
+    ]
+
+    await query.edit_message_text(
+        "\n".join(lines),
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
@@ -1556,12 +1617,12 @@ async def submit_attendance(session):
         })
 
     visitors_payload = [
-        f"{visitor['name']} (from {visitor['from']})"
+        f"{visitor['name']} (from {visitor['from']}, {visitor.get('source', '')})"
         for visitor in session["visitors"]
     ]
 
     newcomers_payload = [
-        f"{newcomer['name']} ({newcomer['department']})"
+        f"{newcomer['name']} ({newcomer['department']}, {newcomer.get('source', '')})"
         for newcomer in session["newcomers"]
     ]
 
@@ -1924,6 +1985,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         idx = int(action.split(":", 1)[1])
 
         session["resolving_text"] = session["unknown_sorted"][idx]
+        session["resolve_added_members"] = set()
 
         await show_resolve_departments(query, session)
 
@@ -1939,11 +2001,20 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         return
 
+    elif action == "raddmore":
+
+        session = user_sessions[user_id]
+
+        await show_resolve_departments(query, session)
+
+        return
+
     elif action == "askip":
 
         session = user_sessions[user_id]
 
         session.pop("resolving_text", None)
+        session.pop("resolve_added_members", None)
 
         if "resolve_continue" in session:
 
@@ -1974,23 +2045,40 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         resolved_text = session.get("resolving_text")
 
-        session["recognized"].add(member)
+        added_members = session.setdefault("resolve_added_members", set())
+
+        if member not in added_members:
+
+            added_members.add(member)
+
+            session["recognized"].add(member)
+
+            if resolved_text:
+
+                src = session["unknown_sources"].get(resolved_text)
+
+                # Onsite overrides online here too.
+                if src in ("onsite", "both"):
+                    session["onsite_members"].add(member)
+                    session["online_members"].discard(member)
+
+                elif src == "online":
+                    session["online_members"].add(member)
+
+        await show_resolve_confirm(query, session)
+
+        return
+
+    elif action == "adone":
+
+        session = user_sessions[user_id]
+
+        resolved_text = session.pop("resolving_text", None)
+        session.pop("resolve_added_members", None)
 
         if resolved_text:
-
             session["unknown"].discard(resolved_text)
-
-            src = session["unknown_sources"].pop(resolved_text, None)
-
-            # Onsite overrides online here too.
-            if src in ("onsite", "both"):
-                session["onsite_members"].add(member)
-                session["online_members"].discard(member)
-
-            elif src == "online":
-                session["online_members"].add(member)
-
-        session.pop("resolving_text", None)
+            session["unknown_sources"].pop(resolved_text, None)
 
         if "resolve_continue" in session:
 
@@ -2058,6 +2146,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         session["stage"] = STAGE_VISITOR
         session["visitor_pending_name"] = None
+        session["visitor_pending_from"] = None
 
         await query.message.reply_text(
 
@@ -2075,6 +2164,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         session["stage"] = STAGE_NEWCOMER
         session["newcomer_pending_name"] = None
+        session["newcomer_pending_department"] = None
 
         await query.message.reply_text(
 
@@ -2083,6 +2173,36 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "When finished adding newcomers, type /done."
 
         )
+
+        return
+
+    elif action.startswith("vsrc:"):
+
+        source = action.split(":", 1)[1]
+
+        session = user_sessions[user_id]
+
+        pending_name = session.get("visitor_pending_name")
+        pending_from = session.get("visitor_pending_from")
+
+        if pending_name and pending_from:
+
+            session["visitors"].append({
+                "name": pending_name,
+                "from": pending_from,
+                "source": source,
+            })
+
+            session["visitor_pending_name"] = None
+            session["visitor_pending_from"] = None
+
+            await query.edit_message_text(
+                f"✅ Visitor added: {pending_name} (from {pending_from}, {source})"
+            )
+
+            await query.message.reply_text(
+                "Type another visitor's name, or /done to return to the review."
+            )
 
         return
 
@@ -2096,15 +2216,42 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if name:
 
+            session["newcomer_pending_department"] = department
+
+            await query.edit_message_text(
+                f"Was {name} ({department}) Online or Onsite?",
+                reply_markup=InlineKeyboardMarkup([
+                    [
+                        InlineKeyboardButton("💻 Online", callback_data="nsrc:Online"),
+                        InlineKeyboardButton("🏛 Onsite", callback_data="nsrc:Onsite"),
+                    ]
+                ])
+            )
+
+        return
+
+    elif action.startswith("nsrc:"):
+
+        source = action.split(":", 1)[1]
+
+        session = user_sessions[user_id]
+
+        name = session.get("newcomer_pending_name")
+        department = session.get("newcomer_pending_department")
+
+        if name and department:
+
             session["newcomers"].append({
                 "name": name,
                 "department": department,
+                "source": source,
             })
 
             session["newcomer_pending_name"] = None
+            session["newcomer_pending_department"] = None
 
             await query.edit_message_text(
-                f"✅ Newcomer added: {name} ({department})"
+                f"✅ Newcomer added: {name} ({department}, {source})"
             )
 
             await query.message.reply_text(
@@ -2170,7 +2317,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         session["stage"] = STAGE_REVIEW
         session["visitor_pending_name"] = None
+        session["visitor_pending_from"] = None
         session["newcomer_pending_name"] = None
+        session["newcomer_pending_department"] = None
 
         await show_review_callback(query, session)
 
