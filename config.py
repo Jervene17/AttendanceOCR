@@ -144,6 +144,7 @@ MEMBER_LISTS = {
         "Reisa",
         "Nelissa",
         "MCor",
+        "PK",
     ],
 
     "CAMPUS FEMALES": [
@@ -1017,6 +1018,24 @@ MEMBERS = {
         "attendance": DEFAULT_ATTENDANCE.copy(),
         "sort_order": 25,
     },
+
+    "CrF026": {
+            "display_name": "PK",
+            "official_name": "Kristal Ban",
+            "aliases": [
+                "PK",
+                "필리핀_반나희",
+                "Kristal Ban",
+                "P Kristal",
+                "Kristal",
+                "Nahee Ban",
+                "Ban Nahee",
+            ],
+            "department": CAREER_FEMALES,
+            "status": ACTIVE,
+            "attendance": DEFAULT_ATTENDANCE.copy(),
+            "sort_order": 26,
+        },
     # =================================================
     # CAMPUS FEMALES
     # =================================================
