@@ -1571,7 +1571,7 @@ MEMBERS = {
             "sort_order": 3,
         },
 
-    "LVC003": {
+    "LVC004": {
                 "display_name": "Glory",
                 "official_name": "Glory Tangarorang",
                 "aliases": [
@@ -1585,7 +1585,7 @@ MEMBERS = {
                     wednesday=ONLINE,
                     predawn=ONLINE,
                 ),
-                "sort_order": 3,
+                "sort_order": 4,
             },
 }
 
