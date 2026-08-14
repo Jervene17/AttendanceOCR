@@ -738,6 +738,7 @@ MEMBERS = {
             "Angel G",
             "Angel Galez",
             "Angel",
+            "Ma Angelica Galez",
         ],
         "department": CAREER_FEMALES,
         "status": ACTIVE,
@@ -1568,6 +1569,23 @@ MEMBERS = {
             ),
             "sort_order": 3,
         },
+
+    "LVC003": {
+                "display_name": "Glory",
+                "official_name": "Glory Tangarorang",
+                "aliases": [
+                    "Glory",
+                    "Glory Tangarorang",
+                ],
+                "department": LVC,
+                "status": ACTIVE,
+                "attendance": attendance(
+                    sunday=ONLINE,
+                    wednesday=ONLINE,
+                    predawn=ONLINE,
+                ),
+                "sort_order": 3,
+            },
 }
 
 # =====================================================
