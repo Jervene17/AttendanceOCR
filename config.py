@@ -189,6 +189,7 @@ MEMBER_LISTS = {
         "Cynthia Aquino",
         "Diane",
         "Kezia",
+        "Glory",
     ],
 
     "Milky Way and SS": [
