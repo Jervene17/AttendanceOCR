@@ -1203,6 +1203,41 @@ MEMBERS = {
         "attendance": DEFAULT_ATTENDANCE.copy(),
         "sort_order": 8,
     },
+
+    "JSN001": {
+            "display_name": "NC RD",
+            "official_name": "NC RD",
+            "aliases": [
+                "NC RD",
+                "NC_RD",
+            ],
+            "department": JS,
+            "status": NEWCOMER,
+            "attendance": attendance(
+                sunday=ONLINE,
+                wednesday=ONLINE,
+                predawn=ONLINE,
+            ),
+            "sort_order": 9,
+    },
+
+    "JSN002": {
+                "display_name": "NC HM",
+                "official_name": "NC HM",
+                "aliases": [
+                    "NC HM",
+                    "NC_HM",
+                ],
+                "department": JS,
+                "status": NEWCOMER,
+                "attendance": attendance(
+                    sunday=ONLINE,
+                    wednesday=ONLINE,
+                    predawn=ONLINE,
+                ),
+                "sort_order": 10,
+        },
+    
     # =================================================
     # Milky Way and SS
     # =================================================
