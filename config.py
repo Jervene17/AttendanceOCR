@@ -192,6 +192,7 @@ MEMBER_LISTS = {
         "Diane",
         "Kezia",
         "Glory",
+        "Jude",
     ],
 
     "Milky Way and SS": [
@@ -1665,6 +1666,23 @@ MEMBERS = {
                 ),
                 "sort_order": 4,
             },
+
+    "LVC005": {
+                    "display_name": "Jude",
+                    "official_name": "Jude",
+                    "aliases": [
+                        "Jude",                       
+                    ],
+                    "department": LVC,
+                    "status": ACTIVE,
+                    "attendance": attendance(
+                        sunday=ONLINE,
+                        wednesday=ONLINE,
+                        predawn=ONLINE,
+                    ),
+                    "sort_order": 5,
+                },
+
 }
 
 # =====================================================
