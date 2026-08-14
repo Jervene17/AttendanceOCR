@@ -1254,6 +1254,20 @@ def render_review_text(session):
 
             lines.append(f"   • {html.escape(member)} ({tag_display})")
 
+    for visitor in session["visitors"]:
+        total_present += 1
+        if visitor.get("source") == "Online":
+            total_online += 1
+        else:
+            total_onsite += 1
+
+    for newcomer in session["newcomers"]:
+        total_present += 1
+        if newcomer.get("source") == "Online":
+            total_online += 1
+        else:
+            total_onsite += 1
+
     lines.append("")
     lines.append(f"👥 Total Present: {total_present}")
     lines.append(f"💻 Total Online: {total_online}")
