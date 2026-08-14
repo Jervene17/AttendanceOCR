@@ -169,6 +169,7 @@ MEMBER_LISTS = {
         "Cheyserr",
         "M Saeyoung",
         "Alma Joy",
+        "Andrew Dela Cruz",
     ],
 
     "Newcomers": [
