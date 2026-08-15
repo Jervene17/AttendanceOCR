@@ -26,11 +26,35 @@ from config import (
 
 
 # =====================================================
+# Text normalization for matching
+# =====================================================
+# attendance_ocr.py runs every OCR/typed name through
+# cleaner.clean_names() -> normalize_name() BEFORE calling
+# find_member(), so the text find_member() receives is
+# already uppercased, punctuation-stripped, and digit/letter
+# OCR-corrected (0->O, 1->I, 5->S, |->I).
+#
+# For find_member() to match anything, the alias index below
+# must be built through that exact same normalize_name() —
+# not a separate/approximate normalization — otherwise e.g.
+# "D.Fatima" (alias) and "DFATIMA" (what clean_names produces
+# from OCR/typed "D.Fatima") normalize to different strings
+# and never match.
+#
+# normalize_name() is idempotent, so calling it again inside
+# find_member() is safe for callers that pass in raw text
+# directly (bypassing clean_names).
+
+from cleaner import normalize_name
+
+
+# =====================================================
 # Display-name / alias -> member lookup
 # =====================================================
 # Built once at import time: every alias (and the display
 # name and official name themselves) maps to the member's
-# full record, so find_member() is an O(1) dict lookup.
+# full record, so find_member() is an O(1) dict lookup on
+# the normalized text.
 
 DISPLAY_NAME_TO_MEMBER = {}
 
@@ -47,7 +71,9 @@ for _member_id, _member in MEMBERS.items():
         names_to_index.add(_member["official_name"])
 
     for name in names_to_index:
-        DISPLAY_NAME_TO_MEMBER[name] = _member
+        normalized = normalize_name(name)
+        if normalized:
+            DISPLAY_NAME_TO_MEMBER[normalized] = _member
 
     # Write the enriched copy back so MEMBERS[id] also carries
     # member_id, matching what DISPLAY_NAME_TO_MEMBER holds.
@@ -56,14 +82,16 @@ for _member_id, _member in MEMBERS.items():
 
 def find_member(text):
     """
-    Looks up raw OCR/typed text against every known alias /
-    display name / official name. Returns the member dict
-    (with member_id) or None if there's no match.
+    Looks up OCR/typed text (already normalized by
+    cleaner.normalize_name via clean_names(), or raw text —
+    normalize_name is idempotent either way) against every
+    known alias / display name / official name. Returns the
+    member dict (with member_id) or None if there's no match.
     """
     if not text:
         return None
 
-    return DISPLAY_NAME_TO_MEMBER.get(text.strip())
+    return DISPLAY_NAME_TO_MEMBER.get(normalize_name(text))
 
 
 def get_member_type(member):
