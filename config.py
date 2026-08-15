@@ -581,7 +581,7 @@ MEMBERS = {
             "Clarice",
         ],
         "department": CAREER_FEMALES,
-        "status": ACTIVE,
+        "status": INACTIVE,
         "attendance": attendance(
             sunday=ONLINE,
             wednesday=ONLINE,
