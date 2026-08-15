@@ -600,11 +600,7 @@ MEMBERS = {
         ],
         "department": CAREER_FEMALES,
         "status": ACTIVE,
-        "attendance": attendance(
-            sunday=ONLINE,
-            wednesday=ONLINE,
-            predawn=ONLINE,
-        ),
+        "attendance": DEFAULT_ATTENDANCE.copy(),
         "sort_order": 5,
     },
 
@@ -809,9 +805,13 @@ MEMBERS = {
             "Milca Angeles",
             "Milca",
         ],
-        "department": CAREER_FEMALES,
-        "status": ACTIVE,
-        "attendance": DEFAULT_ATTENDANCE.copy(),
+            "department": CAREER_FEMALES,
+            "status": ACTIVE,
+            "attendance": attendance(
+                sunday=ONLINE,
+                wednesday=ONLINE,
+                predawn=ONLINE,
+        ),
         "sort_order": 18,
     },
 
@@ -1023,7 +1023,11 @@ MEMBERS = {
         ],
         "department": JSF,
         "status": ACTIVE,
-        "attendance": DEFAULT_ATTENDANCE.copy(),
+        "attendance": attendance(
+            sunday=ONLINE,
+            wednesday=ONLINE,
+            predawn=ONLINE,
+        ),
         "sort_order": 2,
     },
 
@@ -1077,7 +1081,11 @@ MEMBERS = {
         ],
         "department": JSF,
         "status": ACTIVE,
-        "attendance": DEFAULT_ATTENDANCE.copy(),
+        "attendance": attendance(
+            sunday=ONLINE,
+            wednesday=ONLINE,
+            predawn=ONLINE,
+        ),
         "sort_order": 5,
     },
 
@@ -1089,7 +1097,11 @@ MEMBERS = {
         ],
         "department": JSF,
         "status": ACTIVE,
-        "attendance": DEFAULT_ATTENDANCE.copy(),
+        "attendance": attendance(
+            sunday=ONLINE,
+            wednesday=ONLINE,
+            predawn=ONLINE,
+        ),
         "sort_order": 6,
     },
 
@@ -1101,7 +1113,11 @@ MEMBERS = {
         ],
         "department": JSF,
         "status": ACTIVE,
-        "attendance": DEFAULT_ATTENDANCE.copy(),
+        "attendance": attendance(
+            sunday=ONLINE,
+            wednesday=ONLINE,
+            predawn=ONLINE,
+        ),
         "sort_order": 7,
     },
 
@@ -1113,7 +1129,11 @@ MEMBERS = {
         ],
         "department": JSF,
         "status": ACTIVE,
-        "attendance": DEFAULT_ATTENDANCE.copy(),
+        "attendance": attendance(
+            sunday=ONLINE,
+            wednesday=ONLINE,
+            predawn=ONLINE,
+        ),
         "sort_order": 8,
     },
 
@@ -1485,7 +1505,11 @@ MEMBERS = {
             ],
             "department": OPM,
             "status": ACTIVE,
-            "attendance": DEFAULT_ATTENDANCE.copy(),
+            "attendance": attendance(
+                sunday=ONLINE,
+                wednesday=ONLINE,
+                predawn=ONLINE,
+            ),
             "sort_order": 8,
         },
     # =================================================
@@ -1663,37 +1687,37 @@ MEMBERS = {
         },
 
     "LVC004": {
-                "display_name": "Glory",
-                "official_name": "Glory Tangarorang",
-                "aliases": [
-                    "Glory",
-                    "Glory Tangarorang",
-                ],
-                "department": LVC,
-                "status": ACTIVE,
-                "attendance": attendance(
-                    sunday=ONLINE,
-                    wednesday=ONLINE,
-                    predawn=ONLINE,
-                ),
-                "sort_order": 4,
-            },
+            "display_name": "Glory",
+            "official_name": "Glory Tangarorang",
+            "aliases": [
+                "Glory",
+                "Glory Tangarorang",
+            ],
+            "department": LVC,
+            "status": ACTIVE,
+            "attendance": attendance(
+                sunday=ONLINE,
+                wednesday=ONLINE,
+                predawn=ONLINE,
+            ),
+            "sort_order": 4,
+        },
 
     "LVC005": {
-                    "display_name": "Jude",
-                    "official_name": "Jude",
-                    "aliases": [
-                        "Jude",                       
-                    ],
-                    "department": LVC,
-                    "status": ACTIVE,
-                    "attendance": attendance(
-                        sunday=ONLINE,
-                        wednesday=ONLINE,
-                        predawn=ONLINE,
-                    ),
-                    "sort_order": 5,
-                },
+            "display_name": "Jude",
+            "official_name": "Jude",
+            "aliases": [
+                "Jude",                       
+            ],
+            "department": LVC,
+            "status": ACTIVE,
+            "attendance": attendance(
+                sunday=ONLINE,
+                wednesday=ONLINE,
+                predawn=ONLINE,
+            ),
+            "sort_order": 5,
+        },
 
 }
 
