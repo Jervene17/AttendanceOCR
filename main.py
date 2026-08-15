@@ -769,14 +769,41 @@ async def start_verify_selection(send_func, session):
 
 def build_resolve_prompt_text(session):
     name = session.get("resolving_text", "")
-    return f"❓ Unrecognized name: \"{name}\"\n\nWhich department do they belong to?"
+    return (
+        f"❓ Unrecognized name: \"{name}\"\n\n"
+        "Which department do they belong to, or mark them as a "
+        "Visitor/Newcomer if they're not a member?"
+    )
+
+
+def build_resolve_departments_keyboard():
+    """
+    Shared by both resolve entry points — the auto-queue right
+    after OCR (advance_resolve_queue) and the "🔍 Resolve Unknown"
+    button on the review screen (show_resolve_departments) — so an
+    unrecognized name can always be marked as a Visitor or Newcomer
+    right alongside picking a department, not just from one of the
+    two paths.
+    """
+
+    keyboard = [
+        [InlineKeyboardButton("👋 Mark as Visitor", callback_data="rvisitor")],
+        [InlineKeyboardButton("🌱 Mark as Newcomer", callback_data="rnewcomer")],
+    ]
+
+    for department in MEMBER_LISTS:
+        keyboard.append(
+            [InlineKeyboardButton(department, callback_data=f"adept:{department}")]
+        )
+
+    return keyboard
 
 
 async def advance_resolve_queue(send_func, session):
     """
-    Pops the next unresolved name and prompts for its department.
-    Returns True if a prompt was sent (still resolving), False if
-    the queue is now empty.
+    Pops the next unresolved name and prompts for its department
+    (or Visitor/Newcomer). Returns True if a prompt was sent (still
+    resolving), False if the queue is now empty.
     """
 
     queue = session.get("resolve_queue")
@@ -785,9 +812,11 @@ async def advance_resolve_queue(send_func, session):
         session["resolving_text"] = queue.pop(0)
         session["resolve_added_members"] = set()
 
+        keyboard = build_resolve_departments_keyboard()
+
         await send_func(
             text=build_resolve_prompt_text(session),
-            reply_markup=build_department_picker("adept")
+            reply_markup=InlineKeyboardMarkup(keyboard)
         )
         return True
 
@@ -1227,15 +1256,7 @@ async def show_unknown_list(query, session):
 
 async def show_resolve_departments(query, session):
 
-    keyboard = [
-        [InlineKeyboardButton("👋 Mark as Visitor", callback_data="rvisitor")],
-        [InlineKeyboardButton("🌱 Mark as Newcomer", callback_data="rnewcomer")],
-    ]
-
-    for department in MEMBER_LISTS:
-        keyboard.append(
-            [InlineKeyboardButton(department, callback_data=f"adept:{department}")]
-        )
+    keyboard = build_resolve_departments_keyboard()
 
     keyboard.append(
         [InlineKeyboardButton("⬅ Back", callback_data="resolve")]
