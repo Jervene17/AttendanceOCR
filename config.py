@@ -381,7 +381,7 @@ MEMBERS = {
             "Juego, Honesto Jr, Martinez",
             "Jiboy",
         ],
-        "department": FAMILY,
+        "department": BLESSEDM,
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
         "sort_order": 4,
