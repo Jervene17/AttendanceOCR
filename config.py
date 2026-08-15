@@ -14,15 +14,19 @@ WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 # Group Checker Mapping
 # =====================================================
 # Departments
-FAMILY = "FAMILY"
+BLESSEDF = "BLESSED FEMALES"
+BLESSEDM = "BLESSED MALES"
 CAREER_MALES = "CAREER MALES"
 CAREER_FEMALES = "CAREER FEMALES"
 CAMPUS_FEMALES = "CAMPUS FEMALES"
-JS = "JS"
-OPM = "OPM"
+CAMPUS_MALES = "CAMPUS MALES"
+JSF = "JS FEMALES"
+JSM = "JS MALES"
+OPM = "Overseas Pinoy Members"
 LLC = "LLC"
 LVC = "LVC"
-MILKY_WAY_SS = "Milky Way and SS"
+MILKY_WAY = "Milky Way"
+NEWCOMERS = "Newcomers"
 
 # Status
 ACTIVE = "ACTIVE"
@@ -87,24 +91,20 @@ USER_NAMES = {
 
 MEMBER_LISTS = {
 
-    "FAMILY": [
+    "BLESSEDF": [
         "Fatima",
-        "Vangie",
         "M Ru",
-        "M Jhay",
-        "Dcns Frances",
         "Shayne",
         "Eldress Issa",
-        "Hannah",
+        "Lavinia",
+    ],
+
+    "BLESSEDM": [
+        "M Jhay",
         "Dcn Ian",
         "M Jervene",
         "Jessie",
-        "Almen",
-        "Dcn Probo",
-        "Fernan",
         "Jiboy",
-        "Riza",
-        "Lavinia",
         "Iven",
     ],
 
@@ -150,6 +150,7 @@ MEMBER_LISTS = {
     "CAMPUS FEMALES": [
         "Divine",
         "Marinell",
+        "Glenda",
     ],
 
     "JS": [
@@ -160,6 +161,12 @@ MEMBER_LISTS = {
         "Edilyn",
         "Raquel",
         "Florelyn",
+        "Vangie",
+        "Almen",
+        "Dcns Frances",
+        "Dcn Probo",
+        "Fernan",
+        "Hannah",
     ],
 
     "OPM": [
@@ -170,6 +177,7 @@ MEMBER_LISTS = {
         "M Saeyoung",
         "Alma Joy",
         "Andrew Dela Cruz",
+        "Riza",
     ],
 
     "Newcomers": [
@@ -195,15 +203,18 @@ MEMBER_LISTS = {
         "Jude",
     ],
 
-    "Milky Way and SS": [
+    "Milky Way": [
         "Victor",
         "Eve",
         "Vanna",
         "Gia",
         "Am Am",
+    ],
+
+    "Campus Male": [
         "Nikko",
-        "Glenda",
-        ],
+    ]
+    
 }
 # =====================================================
 # Master Member Registry
@@ -215,7 +226,7 @@ MEMBERS = {
     # FAMILY
     # =================================================
 
-    "FAM001": {
+    "BFF001": {
         "display_name": "Fatima",
         "official_name": "Fatima Berliene Venturina",
         "aliases": [
@@ -227,28 +238,13 @@ MEMBERS = {
             "BF_Fatima",
             "Fatima",
         ],
-        "department": FAMILY,
+        "department": BLESSEDF,
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
         "sort_order": 1,
     },
 
-    "FAM002": {
-        "display_name": "Vangie",
-        "official_name": "Vangie Dolom",
-        "aliases": [
-            "Evangelyn Dolom",
-            "Vangie Dolom",
-            "Evangelyn",
-            "Vangie",
-        ],
-        "department": FAMILY,
-        "status": ACTIVE,
-        "attendance": DEFAULT_ATTENDANCE.copy(),
-        "sort_order": 2,
-    },
-
-    "FAM003": {
+    "BFF002": {
         "display_name": "M Ru",
         "official_name": "Ruby Valderrama Santos",
         "aliases": [
@@ -260,29 +256,15 @@ MEMBERS = {
             "MRu",
             "M.Ru",
             "M Ru",
+            "BF_Ruby",
         ],
-        "department": FAMILY,
+        "department": BLESSEDF,
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
-        "sort_order": 3,
+        "sort_order": 2,
     },
 
-    "FAM004": {
-        "display_name": "Dcns Frances",
-        "official_name": "Frances Ann Canillas",
-        "aliases": [
-            "Frances",
-            "Frances Canillas",
-            "Frances Ann Canillas",
-            "Dcns Frances",
-        ],
-        "department": FAMILY,
-        "status": ACTIVE,
-        "attendance": DEFAULT_ATTENDANCE.copy(),
-        "sort_order": 4,
-    },
-
-    "FAM005": {
+    "BFF003": {
         "display_name": "Shayne",
         "official_name": "Shayne Ericka Ombao",
         "aliases": [
@@ -292,13 +274,13 @@ MEMBERS = {
             "Shayne Dalde",
             "Shayne",
         ],
-        "department": FAMILY,
+        "department": BLESSEDF,
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
-        "sort_order": 5,
+        "sort_order": 3,
     },
 
-    "FAM006": {
+    "BFF004": {
         "display_name": "Eldress Issa",
         "official_name": "Marissa Pastor Liponhay",
         "aliases": [
@@ -315,27 +297,29 @@ MEMBERS = {
             "EIssa",
             "Marissa Liponhay",
         ],
-        "department": FAMILY,
+        "department": BLESSEDF,
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
-        "sort_order": 6,
+        "sort_order": 4,
     },
 
-    "FAM007": {
-        "display_name": "Hannah",
-        "official_name": "Hannah Zotomayor",
-        "aliases": [
-            "Hannah Zotomayor",
-            "Hannah Sanz",
-            "Hannah",
-        ],
-        "department": FAMILY,
-        "status": ACTIVE,
-        "attendance": DEFAULT_ATTENDANCE.copy(),
-        "sort_order": 7,
-    },
-
-    "FAM008": {
+    "BFF005": {
+            "display_name": "Lavinia",
+            "official_name": "Lavinia Arances Harris",
+            "aliases": [
+                "Lavinia Arances",
+                "Lavinia Harris",
+                "Inia",
+                "Lavinia A Harris",
+                "Lavinia",
+            ],
+            "department": BLESSEDF,
+            "status": ACTIVE,
+            "attendance": DEFAULT_ATTENDANCE.copy(),
+            "sort_order": 5,
+        },
+    
+    "BFM001": {
         "display_name": "Dcn Ian",
         "official_name": "Ian Liponhay",
         "aliases": [
@@ -347,13 +331,13 @@ MEMBERS = {
             "Dcn Ian",
             "D Ian",
         ],
-        "department": FAMILY,
+        "department": BLESSEDM,
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
-        "sort_order": 8,
+        "sort_order": 1,
     },
 
-    "FAM009": {
+    "BFM002": {
         "display_name": "M Jervene",
         "official_name": "Jervene Venturina",
         "aliases": [
@@ -364,13 +348,13 @@ MEMBERS = {
             "Philippines_Jervene Venturina",
             "Jervene Venturina_Philippines",
         ],
-        "department": FAMILY,
+        "department": BLESSEDM,
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
-        "sort_order": 9,
+        "sort_order": 2,
     },
 
-    "FAM010": {
+    "BFM003": {
         "display_name": "Jessie",
         "official_name": "Jessie Dalde",
         "aliases": [
@@ -382,53 +366,13 @@ MEMBERS = {
             "Jessie Dalde Jr",
             "Jesse",
         ],
-        "department": FAMILY,
+        "department": BLESSEDM,
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
-        "sort_order": 10,
+        "sort_order": 3,
     },
 
-    "FAM011": {
-        "display_name": "Almen",
-        "official_name": "Almen Dolom",
-        "aliases": [
-            "Almen Dolom",
-            "Almen",
-        ],
-        "department": FAMILY,
-        "status": ACTIVE,
-        "attendance": DEFAULT_ATTENDANCE.copy(),
-        "sort_order": 11,
-    },
-
-    "FAM012": {
-        "display_name": "Dcn Probo",
-        "official_name": "Probo Canillas",
-        "aliases": [
-            "Probo",
-            "Probo Canillas",
-            "Dcn Probo",
-        ],
-        "department": FAMILY,
-        "status": ACTIVE,
-        "attendance": DEFAULT_ATTENDANCE.copy(),
-        "sort_order": 12,
-    },
-
-    "FAM013": {
-        "display_name": "Fernan",
-        "official_name": "Fernan Zotomayor",
-        "aliases": [
-            "Fernan Zotomayor",
-            "Fernan",
-        ],
-        "department": FAMILY,
-        "status": ACTIVE,
-        "attendance": DEFAULT_ATTENDANCE.copy(),
-        "sort_order": 13,
-    },
-
-    "FAM014": {
+    "BFM004": {
         "display_name": "Jiboy",
         "official_name": "Honesto Martinez Juego Jr.",
         "aliases": [
@@ -440,42 +384,10 @@ MEMBERS = {
         "department": FAMILY,
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
-        "sort_order": 14,
+        "sort_order": 4,
     },
 
-    "FAM015": {
-        "display_name": "Riza",
-        "official_name": "Riza Gabriela Bonifacio",
-        "aliases": [
-            "Riza Gabriela",
-            "Riza Bonifacio",
-            "Philippines_Riza (wmd)",
-            "Philippines_Riza",
-            "Riza",
-        ],
-        "department": FAMILY,
-        "status": ACTIVE,
-        "attendance": DEFAULT_ATTENDANCE.copy(),
-        "sort_order": 15,
-    },
-
-    "FAM016": {
-        "display_name": "Lavinia",
-        "official_name": "Lavinia Arances Harris",
-        "aliases": [
-            "Lavinia Arances",
-            "Lavinia Harris",
-            "Inia",
-            "Lavinia A Harris",
-            "Lavinia",
-        ],
-        "department": FAMILY,
-        "status": ACTIVE,
-        "attendance": DEFAULT_ATTENDANCE.copy(),
-        "sort_order": 16,
-    },
-
-    "FAM017": {
+    "BFM005": {
         "display_name": "Iven",
         "official_name": "Iven Axel Harris",
         "aliases": [
@@ -485,13 +397,13 @@ MEMBERS = {
             "Iven",
             "Iven Axel",
         ],
-        "department": FAMILY,
+        "department": BLESSEDM,
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
-        "sort_order": 17,
+        "sort_order": 5,
     },
 
-    "FAM018": {
+    "BFM006": {
         "display_name": "M Jhay",
         "official_name": "Jonathan Santos",
         "aliases": [
@@ -503,7 +415,7 @@ MEMBERS = {
             "Mjhay",
             "M Jhay",
         ],
-        "department": FAMILY,
+        "department": BLESSEDM,
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
         "sort_order": 18,
@@ -1047,6 +959,24 @@ MEMBERS = {
             "attendance": DEFAULT_ATTENDANCE.copy(),
             "sort_order": 26,
         },
+
+     "CrF027": {
+            "display_name": "MCor",
+            "official_name": "Corazon Lualhati",
+            "aliases": [
+                "Cor L",
+                "M Cor",
+                "M.Cor",
+                "Cor",
+                "Corazon Lualhati",
+                "Cor Lualhati",
+                "MCor",
+            ],
+            "department": CAREER_FEMALES,
+            "status": ACTIVE,
+            "attendance": DEFAULT_ATTENDANCE.copy(),
+            "sort_order": 27,
+        },
     # =================================================
     # CAMPUS FEMALES
     # =================================================
@@ -1081,24 +1011,6 @@ MEMBERS = {
     # =================================================
 
     "JS001": {
-        "display_name": "MCor",
-        "official_name": "Corazon Lualhati",
-        "aliases": [
-            "Cor L",
-            "M Cor",
-            "M.Cor",
-            "Cor",
-            "Corazon Lualhati",
-            "Cor Lualhati",
-            "MCor",
-        ],
-        "department": JS,
-        "status": ACTIVE,
-        "attendance": DEFAULT_ATTENDANCE.copy(),
-        "sort_order": 1,
-    },
-
-    "JS002": {
         "display_name": "Tita Merlita",
         "official_name": "Merlita Alidon",
         "aliases": [
@@ -1109,7 +1021,7 @@ MEMBERS = {
             "Merly Alidon",
             "Tita Merlita",
         ],
-        "department": JS,
+        "department": JSF,
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
         "sort_order": 2,
@@ -1127,7 +1039,7 @@ MEMBERS = {
             "Megumi ME",
             "MEGUMI",
         ],
-        "department": JS,
+        "department": JSF,
         "status": ACTIVE,
         "attendance": attendance(
             sunday=ONLINE,
@@ -1144,7 +1056,7 @@ MEMBERS = {
             "Emercedita Hiramatsu",
             "Emeru",
         ],
-        "department": JS,
+        "department": JSF,
         "status": ACTIVE,
         "attendance": attendance(
             sunday=ONLINE,
@@ -1163,7 +1075,7 @@ MEMBERS = {
             "Mitch Bautista",
             "Michelle",
         ],
-        "department": JS,
+        "department": JSF,
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
         "sort_order": 5,
@@ -1175,7 +1087,7 @@ MEMBERS = {
         "aliases": [
             "Edilyn",
         ],
-        "department": JS,
+        "department": JSF,
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
         "sort_order": 6,
@@ -1187,7 +1099,7 @@ MEMBERS = {
         "aliases": [
             "Raquel",
         ],
-        "department": JS,
+        "department": JSF,
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
         "sort_order": 7,
@@ -1199,11 +1111,95 @@ MEMBERS = {
         "aliases": [
             "Florelyn",
         ],
-        "department": JS,
+        "department": JSF,
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
         "sort_order": 8,
     },
+
+    "JS009": {
+            "display_name": "Vangie",
+            "official_name": "Vangie Dolom",
+            "aliases": [
+                "Evangelyn Dolom",
+                "Vangie Dolom",
+                "Evangelyn",
+                "Vangie",
+            ],
+            "department": JSF,
+            "status": ACTIVE,
+            "attendance": DEFAULT_ATTENDANCE.copy(),
+            "sort_order": 9,
+        },
+
+    "JS010": {
+            "display_name": "Dcns Frances",
+            "official_name": "Frances Ann Canillas",
+            "aliases": [
+                "Frances",
+                "Frances Canillas",
+                "Frances Ann Canillas",
+                "Dcns Frances",
+            ],
+            "department": JSF,
+            "status": ACTIVE,
+            "attendance": DEFAULT_ATTENDANCE.copy(),
+            "sort_order": 10,
+        },
+
+    "JS011": {
+            "display_name": "Hannah",
+            "official_name": "Hannah Zotomayor",
+            "aliases": [
+                "Hannah Zotomayor",
+                "Hannah Sanz",
+                "Hannah",
+            ],
+            "department": JSF,
+            "status": ACTIVE,
+            "attendance": DEFAULT_ATTENDANCE.copy(),
+            "sort_order": 11,
+        },
+
+    "JSM001": {
+            "display_name": "Almen",
+            "official_name": "Almen Dolom",
+            "aliases": [
+                "Almen Dolom",
+                "Almen",
+            ],
+            "department": JSM,
+            "status": ACTIVE,
+            "attendance": DEFAULT_ATTENDANCE.copy(),
+            "sort_order": 1,
+        },
+    
+    "JSM002": {
+            "display_name": "Dcn Probo",
+            "official_name": "Probo Canillas",
+            "aliases": [
+                "Probo",
+                "Probo Canillas",
+                "Dcn Probo",
+            ],
+            "department": JSM,
+            "status": ACTIVE,
+            "attendance": DEFAULT_ATTENDANCE.copy(),
+            "sort_order": 2,
+        },
+    
+    "JSM003": {
+            "display_name": "Fernan",
+            "official_name": "Fernan Zotomayor",
+            "aliases": [
+                "Fernan Zotomayor",
+                "Fernan",
+            ],
+            "department": JSM,
+            "status": ACTIVE,
+            "attendance": DEFAULT_ATTENDANCE.copy(),
+            "sort_order": 3,
+        },
 
     "JSN001": {
             "display_name": "NC RD",
@@ -1212,7 +1208,7 @@ MEMBERS = {
                 "NC RD",
                 "NC_RD",
             ],
-            "department": JS,
+            "department": NEWCOMERS,
             "status": NEWCOMER,
             "attendance": attendance(
                 sunday=ONLINE,
@@ -1229,7 +1225,7 @@ MEMBERS = {
                     "NC HM",
                     "NC_HM",
                 ],
-                "department": JS,
+                "department": NEWCOMERS,
                 "status": NEWCOMER,
                 "attendance": attendance(
                     sunday=ONLINE,
@@ -1252,7 +1248,7 @@ MEMBERS = {
             "Victor Philip Liponhay",
             "Victor Liponhay",
         ],
-        "department": MILKY_WAY_SS,
+        "department": MILKY_WAY,
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
         "sort_order": 1,
@@ -1267,7 +1263,7 @@ MEMBERS = {
             "Eliana Given D. Venturina",
             "Eve",
         ],
-        "department": MILKY_WAY_SS,
+        "department": MILKY_WAY,
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
         "sort_order": 2,
@@ -1282,7 +1278,7 @@ MEMBERS = {
             "Vanna Amelie Dolom",
             "Vanna",
         ],
-        "department": MILKY_WAY_SS,
+        "department": MILKY_WAY,
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
         "sort_order": 3,
@@ -1299,7 +1295,7 @@ MEMBERS = {
                 "Gia Santos"
                 "Gia",
             ],
-            "department": MILKY_WAY_SS,
+            "department": MILKY_WAY,
             "status": ACTIVE,
             "attendance": DEFAULT_ATTENDANCE.copy(),
             "sort_order": 4,
@@ -1314,13 +1310,13 @@ MEMBERS = {
                     "Audrielle,"
                     "Am Am",
                 ],
-                "department": MILKY_WAY_SS,
+                "department": MILKY_WAY,
                 "status": ACTIVE,
                 "attendance": DEFAULT_ATTENDANCE.copy(),
                 "sort_order": 5,
     },
 
-    "SS001": {
+    "CAMPM001": {
                     "display_name": "Nikko",
                     "official_name": "Nikko Leguarda",
                     "aliases": [
@@ -1328,23 +1324,23 @@ MEMBERS = {
                         "Nikko Leguarda",
                         "Nikko",
                     ],
-                    "department": MILKY_WAY_SS,
+                    "department": CAMPUS_MALES,
                     "status": ACTIVE,
                     "attendance": DEFAULT_ATTENDANCE.copy(),
-                    "sort_order": 6,
+                    "sort_order": 1,
         },
 
-    "SS002": {
+    "CAMP003": {
                         "display_name": "Glenda",
                         "official_name": "Glenda Leguarda",
                         "aliases": [
                             "Glenda",
                             "Glenda Leguarda",
                         ],
-                        "department": MILKY_WAY_SS,
+                        "department": CAMPUS_FEMALES,
                         "status": ACTIVE,
                         "attendance": DEFAULT_ATTENDANCE.copy(),
-                        "sort_order": 7,
+                        "sort_order": 3,
             },
         
 
@@ -1356,7 +1352,7 @@ MEMBERS = {
         "display_name": "Cheyserr",
         "official_name": "Cheyserr Lamayra",
         "aliases": [
-            "Cheyserr L",
+            "Cheyserr",
             "Cheyserr Lamayra",
         ],
         "department": OPM,
@@ -1373,7 +1369,7 @@ MEMBERS = {
         "display_name": "John Carlo",
         "official_name": "John Carlo Balmes Rucero",
         "aliases": [
-            "John Carlo R",
+            "John Carlo",
             "John Carlo Balmes Rucero",
             "John Carlo Rucero",
             "JC Lucero",
@@ -1392,7 +1388,7 @@ MEMBERS = {
         "display_name": "M Saeyoung",
         "official_name": "Jeong Saeyoung",
         "aliases": [
-            "M. Saeyoung",
+            "M Saeyoung",
             "Saeyoung",
             "Jeong Saeyoung",
             "정새영",
@@ -1430,7 +1426,7 @@ MEMBERS = {
         "display_name": "Andrew",
         "official_name": "Andrew Dela Cruz",
         "aliases": [
-            "Andrew DC",
+            "Andrew",
             "Andrew Dela Cruz",
         ],
         "department": OPM,
@@ -1447,7 +1443,7 @@ MEMBERS = {
         "display_name": "Cherry",
         "official_name": "Cherry Na",
         "aliases": [
-            "Cherry N",
+            "Cherry Na",
             "체리 나",
             "Cherry",
         ],
@@ -1464,7 +1460,7 @@ MEMBERS = {
         "display_name": "Alma Joy",
         "official_name": "Alma Joy",
         "aliases": [
-            "Alma J",
+            "Alma",
             "Alma Joy",
         ],
         "department": OPM,
@@ -1476,6 +1472,22 @@ MEMBERS = {
         ),
         "sort_order": 7,
     },
+
+    "OPM008": {
+            "display_name": "Riza",
+            "official_name": "Riza Gabriela Bonifacio",
+            "aliases": [
+                "Riza Gabriela",
+                "Riza Bonifacio",
+                "Philippines_Riza (wmd)",
+                "Philippines_Riza",
+                "Riza",
+            ],
+            "department": OPM,
+            "status": ACTIVE,
+            "attendance": DEFAULT_ATTENDANCE.copy(),
+            "sort_order": 8,
+        },
     # =================================================
     # LORD'S LOVE CHURCH
     # =================================================
@@ -1540,11 +1552,11 @@ MEMBERS = {
 
     "LLC004": {
         "display_name": "Irene",
-        "official_name": "Irene Fe G. Vicerra",
+        "official_name": "Irene Fe Vicerra",
         "aliases": [
             "Irene V",
-            "VICERRA, Irene Fe G.",
-            "Irene Fe G. Vicerra",
+            "VICERRA, Irene Fe G",
+            "Irene Fe G Vicerra",
             "Irene",
             "Vicerra",
         ],
