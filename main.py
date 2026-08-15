@@ -2026,7 +2026,23 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             response = await submit_attendance(session)
 
-            if response.status_code == 200:
+            # Apps Script web apps always return HTTP 200 for any
+            # execution that doesn't crash outright — even when the
+            # script's own code catches an error and reports
+            # {"status": "error", ...} in the JSON body. So the
+            # webhook's actual verdict has to come from the body,
+            # not the HTTP status code alone.
+            body_status = None
+            body_message = None
+
+            try:
+                body = response.json()
+                body_status = body.get("status")
+                body_message = body.get("message")
+            except ValueError:
+                pass
+
+            if response.status_code == 200 and body_status == "success":
 
                 del user_sessions[user_id]
 
@@ -2039,12 +2055,20 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     "✅ Attendance successfully submitted."
                 )
 
+            elif response.status_code == 200 and body_status == "error":
+
+                await query.message.reply_text(
+                    "Submission failed.\n\n"
+                    f"Webhook error: {body_message or 'unknown error'}"
+                )
+
             else:
 
                 await query.message.reply_text(
 
                     f"Submission failed.\n"
-                    f"HTTP {response.status_code}"
+                    f"HTTP {response.status_code}\n"
+                    f"{response.text[:500]}"
 
                 )
 
