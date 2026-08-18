@@ -64,12 +64,12 @@ ORGANIZER_IDS = [
     503493798,
 ]
 USER_GROUP_MAP = {
-    503493798: "FAMILY",
+    503493798: "BLESSEDFs",
     485107813: "CAREER MALES",
     7681981308: "CAREER FEMALES",
     2016438287: "CAMPUS FEMALES",
     544095264: "JS",
-    515714808: "MILKY WAY and SS",
+    515714808: "MILKY WAY",
 }
 
 # =====================================================
@@ -144,7 +144,6 @@ MEMBER_LISTS = {
         "Reisa",
         "Nelissa",
         "MCor",
-        "PK",
     ],
 
     "CAMPUS FEMALES": [
@@ -942,25 +941,8 @@ MEMBERS = {
         "sort_order": 25,
     },
 
-    "CrF026": {
-            "display_name": "PK",
-            "official_name": "Kristal Ban",
-            "aliases": [
-                "PK",
-                "필리핀_반나희",
-                "Kristal Ban",
-                "P Kristal",
-                "Kristal",
-                "Nahee Ban",
-                "Ban Nahee",
-            ],
-            "department": CAREER_FEMALES,
-            "status": ACTIVE,
-            "attendance": DEFAULT_ATTENDANCE.copy(),
-            "sort_order": 26,
-        },
 
-     "CrF027": {
+     "CrF026": {
             "display_name": "MCor",
             "official_name": "Corazon Lualhati",
             "aliases": [
@@ -976,7 +958,7 @@ MEMBERS = {
             "status": ACTIVE,
             "attendance": DEFAULT_ATTENDANCE.copy(),
             "sort_order": 27,
-        },
+    },
     # =================================================
     # CAMPUS FEMALES
     # =================================================
@@ -1253,67 +1235,67 @@ MEMBERS = {
                     predawn=ONLINE,
                 ),
                 "sort_order": 10,
-        },
+    },
     
     # =================================================
     # Milky Way and SS
     # =================================================
 
     "MW001": {
-        "display_name": "Victor",
-        "official_name": "Victor Liponhay",
-        "aliases": [
-            "Victor",
-            "Uno",
-            "Victor Philip Liponhay",
-            "Victor Liponhay",
-        ],
-        "department": MILKY_WAY,
-        "status": ACTIVE,
-        "attendance": DEFAULT_ATTENDANCE.copy(),
-        "sort_order": 1,
+                "display_name": "Victor",
+                "official_name": "Victor Liponhay",
+                "aliases": [
+                    "Victor",
+                    "Uno",
+                    "Victor Philip Liponhay",
+                    "Victor Liponhay",
+                ],
+                "department": MILKY_WAY,
+                "status": ACTIVE,
+                "attendance": DEFAULT_ATTENDANCE.copy(),
+                "sort_order": 1,
     },
 
     "MW002": {
-        "display_name": "Eve",
-        "official_name": "Eliana Given Venturina",
-        "aliases": [
-            "Eliana Given",
-            "Eve Venturina",
-            "Eliana Given D. Venturina",
-            "Eve",
-        ],
-        "department": MILKY_WAY,
-        "status": ACTIVE,
-        "attendance": DEFAULT_ATTENDANCE.copy(),
-        "sort_order": 2,
+                "display_name": "Eve",
+                "official_name": "Eliana Given Venturina",
+                "aliases": [
+                    "Eliana Given",
+                    "Eve Venturina",
+                    "Eliana Given D. Venturina",
+                    "Eve",
+                ],
+                "department": MILKY_WAY,
+                "status": ACTIVE,
+                "attendance": DEFAULT_ATTENDANCE.copy(),
+                "sort_order": 2,
     },
 
     "MW003": {
-        "display_name": "Vanna",
-        "official_name": "Vanna Amelie Dolom",
-        "aliases": [
-            "Vanna D",
-            "Vanna Dolom",
-            "Vanna Amelie Dolom",
-            "Vanna",
-        ],
-        "department": MILKY_WAY,
-        "status": ACTIVE,
-        "attendance": DEFAULT_ATTENDANCE.copy(),
-        "sort_order": 3,
+                "display_name": "Vanna",
+                "official_name": "Vanna Amelie Dolom",
+                "aliases": [
+                    "Vanna D",
+                    "Vanna Dolom",
+                    "Vanna Amelie Dolom",
+                    "Vanna",
+                ],
+                "department": MILKY_WAY,
+                "status": ACTIVE,
+                "attendance": DEFAULT_ATTENDANCE.copy(),
+                "sort_order": 3,
     },
 
     "MW004": {
-            "display_name": "Gia",
-            "official_name": "Aubrielle Gia Santos",
-            "aliases": [
-                "Bree",
-                "Bree Bree",
-                "Bree Bree Santos",
-                "Bree Santos",
-                "Gia Santos"
-                "Gia",
+                "display_name": "Gia",
+                "official_name": "Aubrielle Gia Santos",
+                "aliases": [
+                    "Bree",
+                    "Bree Bree",
+                    "Bree Bree Santos",
+                    "Bree Santos",
+                    "Gia Santos"
+                    "Gia",
             ],
             "department": MILKY_WAY,
             "status": ACTIVE,
@@ -1337,31 +1319,31 @@ MEMBERS = {
     },
 
     "CAMPM001": {
-                    "display_name": "Nikko",
-                    "official_name": "Nikko Leguarda",
-                    "aliases": [
-                        "Nikko L",
-                        "Nikko Leguarda",
-                        "Nikko",
-                    ],
-                    "department": CAMPUS_MALES,
-                    "status": ACTIVE,
-                    "attendance": DEFAULT_ATTENDANCE.copy(),
-                    "sort_order": 1,
-        },
+                "display_name": "Nikko",
+                "official_name": "Nikko Leguarda",
+                "aliases": [
+                    "Nikko L",
+                    "Nikko Leguarda",
+                    "Nikko",
+                ],
+                "department": CAMPUS_MALES,
+                "status": ACTIVE,
+                "attendance": DEFAULT_ATTENDANCE.copy(),
+                "sort_order": 1,
+    },
 
     "CAMP003": {
-                        "display_name": "Glenda",
-                        "official_name": "Glenda Leguarda",
-                        "aliases": [
-                            "Glenda",
-                            "Glenda Leguarda",
-                        ],
-                        "department": CAMPUS_FEMALES,
-                        "status": ACTIVE,
-                        "attendance": DEFAULT_ATTENDANCE.copy(),
-                        "sort_order": 3,
-            },
+                "display_name": "Glenda",
+                "official_name": "Glenda Leguarda",
+                "aliases": [
+                    "Glenda",
+                    "Glenda Leguarda",
+                ],
+                "department": CAMPUS_FEMALES,
+                "status": ACTIVE,
+                "attendance": DEFAULT_ATTENDANCE.copy(),
+                "sort_order": 3,
+    },
         
 
     # =================================================
