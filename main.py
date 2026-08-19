@@ -6,7 +6,6 @@ print("=" * 50)
 import os
 import asyncio
 import html
-import copy
 
 print(os.getcwd())
 
@@ -71,30 +70,23 @@ retro_pending = {}
 # Catch Up logging
 # =====================================================
 # "Catch up" = a member listened to / watched a service recording
-# after the fact, rather than attending it live. This is logged
-# against a service that has ALREADY been submitted (see the
-# "submit" action in button_handler), and re-posts that service's
-# review summary with an added "Catch Up" section.
+# after the fact, rather than attending it live.
 #
-# submitted_services: snapshot of a session's attendance data taken
-# right when it's successfully submitted, keyed by
-# "{service}|{service_date}". Kept in memory only -- same as
-# user_sessions -- so catch-up logging only works for services
-# submitted since the bot's last restart. Capped at
-# MAX_STORED_SERVICES entries (oldest dropped) so this can't grow
-# unbounded on a long-running process.
-submitted_services = {}
-MAX_STORED_SERVICES = 50
-
-# Catch-up flow, keyed by user_id:
-# {"key": <submitted_services key>, "names": [<typed lines>]}
+# Deliberately built the same way retro submission is: pick a
+# service, type the date, then (for catch up specifically) type the
+# name(s) who caught up. No dependency on any in-memory record of a
+# prior submission -- the sheet itself is the source of truth, so
+# this keeps working across bot restarts, unlike an approach that
+# required looking up a previously-submitted session.
+#
+# Keyed by user_id:
+# {
+#   "service": <str or None>,
+#   "awaiting": "name" | "date" | "names",
+#   "date": <"YYYY-MM-DD", set once the date step is done>,
+#   "names": [<typed lines>],
+# }
 catchup_pending = {}
-
-# Per-user ordered list of submitted_services keys currently shown
-# as buttons, so callback_data can reference them by index
-# ("catchupsvc:{i}") instead of embedding the (possibly long) key
-# directly, which could blow Telegram's 64-byte callback_data cap.
-catchup_service_options = {}
 
 # =====================================================
 # Session Stages
@@ -289,7 +281,8 @@ async def retro(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def catchup(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     /catchup — same entry point as the "🎧 Log Catch Up" menu button,
-    for people who prefer typing the command directly.
+    for people who prefer typing the command directly. Mirrors
+    /retro's shape: pick a service, then type a date.
     """
 
     user_id = update.effective_user.id
@@ -304,7 +297,10 @@ async def catchup(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    await show_catchup_menu(update.message.reply_text, user_id)
+    await update.message.reply_text(
+        "🎧 Catch Up — select the service:",
+        reply_markup=build_service_keyboard("csvc"),
+    )
 
 
 # Kept as direct shortcuts so existing habits/automation still work,
@@ -426,6 +422,18 @@ async def receive_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             return
 
+        # Catch Up flow: same idea -- still need a date before the
+        # name-collection step.
+        if user_id in catchup_pending and catchup_pending[user_id].get("awaiting") == "name":
+            catchup_pending[user_id]["service"] = service_name
+            catchup_pending[user_id]["awaiting"] = "date"
+
+            await update.message.reply_text(
+                f"🎧 Catch Up: {service_name}\n\n"
+                "Please type the date this catch up is for (YYYY-MM-DD):"
+            )
+            return
+
         await begin_session(user_id, service_name, update.message.reply_text)
         return
 
@@ -454,9 +462,36 @@ async def receive_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     # -----------------------------
+    # CATCH UP: user is typing the date
+    # -----------------------------
+    if user_id in catchup_pending and catchup_pending[user_id].get("awaiting") == "date":
+
+        date_text = text.strip()
+
+        try:
+            parsed_date = datetime.strptime(date_text, "%Y-%m-%d")
+        except ValueError:
+            await update.message.reply_text(
+                "Please enter a valid date in YYYY-MM-DD format (e.g. 2026-08-09)."
+            )
+            return
+
+        catchup_pending[user_id]["date"] = parsed_date.strftime("%Y-%m-%d")
+        catchup_pending[user_id]["awaiting"] = "names"
+        catchup_pending[user_id]["names"] = []
+
+        await update.message.reply_text(
+            f"🎧 Catch Up: {catchup_pending[user_id]['service']} — "
+            f"{catchup_pending[user_id]['date']}\n\n"
+            "Type the name(s) of who caught up (one per line).\n\n"
+            "When finished, type /done."
+        )
+        return
+
+    # -----------------------------
     # CATCH UP: collecting typed names
     # -----------------------------
-    if user_id in catchup_pending:
+    if user_id in catchup_pending and catchup_pending[user_id].get("awaiting") == "names":
 
         typed = text.strip()
 
@@ -467,11 +502,11 @@ async def receive_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         catchup_pending[user_id].setdefault("names", []).extend(lines)
 
-        stored = submitted_services.get(catchup_pending[user_id]["key"])
-        label = f"{stored['service']} — {stored['service_date']}" if stored else "this service"
+        service = catchup_pending[user_id].get("service", "")
+        date = catchup_pending[user_id].get("date", "")
 
         await update.message.reply_text(
-            f"✅ Added {len(lines)} name(s) for catch up on {label}.\n"
+            f"✅ Added {len(lines)} name(s) for catch up on {service} — {date}.\n"
             f"Total: {len(catchup_pending[user_id]['names'])}\n\n"
             "Send more names, or type /done."
         )
@@ -792,48 +827,8 @@ async def done(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # =====================================================
-# Catch Up logging (post-submission)
+# Catch Up logging
 # =====================================================
-# Lets an organizer record that specific members listened to a
-# service recording after the fact, against a service that was
-# already submitted this session (see submitted_services above).
-# Re-posts that service's review with an added "Catch Up" section
-# once names are entered.
-
-async def show_catchup_menu(send_func, user_id):
-    """
-    Lists recently submitted services as buttons. send_func is
-    either message.reply_text or query.edit_message_text -- both
-    accept (text, reply_markup=...), same pattern used elsewhere
-    in this file (e.g. send_review).
-    """
-
-    if not submitted_services:
-        await send_func("No submitted services yet to log a catch up for.")
-        return
-
-    ordered_keys = sorted(
-        submitted_services.keys(),
-        key=lambda k: submitted_services[k].get("submitted_at", datetime.min),
-        reverse=True,
-    )[:30]
-
-    catchup_service_options[user_id] = ordered_keys
-
-    keyboard = []
-
-    for i, key in enumerate(ordered_keys):
-        stored = submitted_services[key]
-        label = f"{stored['service']} — {stored['service_date']}"
-        keyboard.append(
-            [InlineKeyboardButton(label, callback_data=f"catchupsvc:{i}")]
-        )
-
-    await send_func(
-        "🎧 Select which service's catch up you want to log:",
-        reply_markup=InlineKeyboardMarkup(keyboard),
-    )
-
 
 async def finish_catchup(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id):
 
@@ -841,6 +836,12 @@ async def finish_catchup(update: Update, context: ContextTypes.DEFAULT_TYPE, use
 
     if not pending:
         await update.message.reply_text("No catch up in progress.")
+        return
+
+    if pending.get("awaiting") != "names":
+        await update.message.reply_text(
+            "Please finish selecting the service and date first."
+        )
         return
 
     names = pending.get("names", [])
@@ -851,31 +852,20 @@ async def finish_catchup(update: Update, context: ContextTypes.DEFAULT_TYPE, use
         )
         return
 
-    key = pending["key"]
-    stored = submitted_services.get(key)
-
-    if not stored:
-        await update.message.reply_text(
-            "⚠️ That service record is no longer available (the bot may have "
-            "restarted since it was submitted). Catch up not logged."
-        )
-        catchup_pending.pop(user_id, None)
-        return
+    service = pending["service"]
+    service_date = pending["date"]
 
     # Match typed names against the member roster the same way
     # onsite typed names are matched -- recognized ones get the
-    # member's proper display name, unmatched ones are kept as-is
-    # and flagged so it's obvious they weren't auto-matched.
+    # member's proper display name + department/type looked up,
+    # unmatched ones are kept as-is and flagged.
     result = recognize_text_names(names)
 
-    # Look up department/type the same way submit_attendance() does,
-    # so the webhook payload carries everything the sheet needs and
-    # doesn't have to re-derive it from just a bare name.
-    new_entries = []
+    entries = []
 
     for member in result["recognized"]:
         info = get_member_info(member["display_name"])
-        new_entries.append({
+        entries.append({
             "name": member["display_name"],
             "matched": True,
             "department": info["department"] if info else "",
@@ -883,20 +873,17 @@ async def finish_catchup(update: Update, context: ContextTypes.DEFAULT_TYPE, use
         })
 
     for text in result["unknown"]:
-        new_entries.append({
+        entries.append({
             "name": text,
             "matched": False,
             "department": "",
             "type": "Unrecognized",
         })
 
-    stored.setdefault("catch_up", [])
-    stored["catch_up"].extend(new_entries)
-
     await update.message.reply_text("📤 Logging catch up...")
 
     try:
-        response = await submit_catchup(stored, new_entries)
+        response = await submit_catchup(service, service_date, entries)
 
         body_status = None
         body_message = None
@@ -913,68 +900,58 @@ async def finish_catchup(update: Update, context: ContextTypes.DEFAULT_TYPE, use
 
         elif response.status_code == 200 and body_status == "error":
             await update.message.reply_text(
-                "⚠️ Catch up saved to this service's review, but the webhook "
-                f"reported an error: {body_message or 'unknown error'}"
+                "⚠️ Webhook reported an error: "
+                f"{body_message or 'unknown error'}"
             )
 
         else:
             await update.message.reply_text(
-                "⚠️ Catch up saved to this service's review, but the webhook "
-                f"returned HTTP {response.status_code}."
+                f"⚠️ Webhook returned HTTP {response.status_code}."
             )
 
     except Exception as e:
         await update.message.reply_text(
-            "⚠️ Catch up saved to this service's review, but I couldn't reach "
-            f"the webhook.\n\n{e}"
+            f"⚠️ Couldn't reach the webhook.\n\n{e}"
         )
 
-    # Re-post the full review for that service, now including the
-    # cumulative Catch Up section (every catch-up ever logged for
-    # this service, not just this batch).
-    await update.message.reply_text(
-        render_review_text(stored, header_note="🎧 Catch up logged"),
-        parse_mode="HTML",
-    )
+    # Simple confirmation of what was logged -- there's no original
+    # session data to re-render a full review against here (catch up
+    # doesn't depend on a prior submission being remembered), so this
+    # just lists what was just recorded.
+    day_name = datetime.strptime(service_date, "%Y-%m-%d").strftime("%A")
+    lines = [f"🎧 Catch Up — {service}", f"🗓 {day_name}, {service_date}", ""]
+
+    for entry in entries:
+        suffix = "" if entry["matched"] else " (unrecognized)"
+        lines.append(f"• {entry['name']}{suffix}")
+
+    await update.message.reply_text("\n".join(lines))
 
     catchup_pending.pop(user_id, None)
 
 
-async def submit_catchup(stored, new_entries):
+async def submit_catchup(service, service_date, entries):
     """
-    Posts the catch-up log to WEBHOOK_URL. Payload shape is a
-    reasonable default -- adjust to match whatever your Apps
-    Script endpoint expects to receive/append:
-
-        entry_type:     "catchup" (lets the script branch away
-                         from the normal attendance-submit path)
-        service /
-        service_date:   identifies which existing sheet row/tab
-                         this catch-up applies to
-        catch_up_new:   just the entries added in THIS /done batch --
-                         each has name/matched/department/type, same
-                         shape as the "members" list in the normal
-                         submit payload, so the sheet-side code can
-                         write rows without re-deriving anything
-        catch_up_all:   the full cumulative catch-up list for this
-                         service so far, in case the script prefers
-                         to overwrite rather than append
+    Posts the catch-up log to WEBHOOK_URL. On the Apps Script side,
+    entry_type == "catchup" routes to saveCatchUp(), which writes
+    into the same "Attendance Log" sheet as normal submissions --
+    same columns, just with Source = "Catch Up" instead of
+    Online/Onsite.
     """
-
-    def _entry(e):
-        return {
-            "name": e["name"],
-            "matched": e["matched"],
-            "department": e.get("department", ""),
-            "type": e.get("type", ""),
-        }
 
     payload = {
-        "service": stored["service"],
-        "service_date": stored["service_date"],
+        "service": service,
+        "service_date": service_date,
         "entry_type": "catchup",
-        "catch_up_new": [_entry(e) for e in new_entries],
-        "catch_up_all": [_entry(e) for e in stored.get("catch_up", [])],
+        "catch_up_new": [
+            {
+                "name": e["name"],
+                "matched": e["matched"],
+                "department": e.get("department", ""),
+                "type": e.get("type", ""),
+            }
+            for e in entries
+        ],
     }
 
     response = await asyncio.to_thread(
@@ -1225,7 +1202,7 @@ def get_member_info(name):
     return None
 
 
-def render_review_text(session, header_note=None):
+def render_review_text(session):
 
     recognized = session["recognized"]
     online_members = session["online_members"]
@@ -1238,10 +1215,6 @@ def render_review_text(session, header_note=None):
 
     lines.append(f"📊 {html.escape(session['service'])} Attendance Review")
     lines.append(f"🗓 {day_name}, {service_date}")
-
-    if header_note:
-        lines.append(html.escape(header_note))
-
     lines.append("")
 
     total_present = 0
@@ -1328,23 +1301,6 @@ def render_review_text(session, header_note=None):
             lines.append(
                 f"• {html.escape(newcomer['name'])} ({html.escape(newcomer['department'])}{source_part})"
             )
-
-    # Not counted in the totals above -- catching up on a recording
-    # is a distinct thing from actually attending the service.
-    if session.get("catch_up"):
-        lines.append("")
-        lines.append("🎧 Catch Up")
-
-        for entry in session["catch_up"]:
-            if isinstance(entry, dict):
-                name = entry.get("name", "")
-                matched = entry.get("matched", True)
-            else:
-                name = entry
-                matched = True
-
-            suffix = "" if matched else " (unrecognized)"
-            lines.append(f"• {html.escape(name)}{suffix}")
 
     return "\n".join(lines)
 
@@ -1811,34 +1767,34 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             return
 
-        await show_catchup_menu(query.edit_message_text, user_id)
+        await query.edit_message_text(
+            "🎧 Catch Up — select the service:",
+            reply_markup=build_service_keyboard("csvc"),
+        )
         return
 
-    if action.startswith("catchupsvc:"):
+    if action.startswith("csvc:"):
 
-        idx = int(action.split(":", 1)[1])
-        keys = catchup_service_options.get(user_id, [])
+        choice = action.split(":", 1)[1]
 
-        if idx >= len(keys):
-            await query.edit_message_text("That selection is no longer valid.")
-            return
+        if choice == "special":
 
-        key = keys[idx]
-        stored = submitted_services.get(key)
+            awaiting_special_service.add(user_id)
+            catchup_pending[user_id] = {"service": None, "awaiting": "name"}
 
-        if not stored:
             await query.edit_message_text(
-                "That service record is no longer available."
+                "Please type the name of the Service/Event:"
             )
-            return
 
-        catchup_pending[user_id] = {"key": key, "names": []}
+        else:
 
-        await query.edit_message_text(
-            f"🎧 Logging catch up for {stored['service']} — {stored['service_date']}\n\n"
-            "Type the name(s) of who caught up (one per line).\n\n"
-            "When finished, type /done."
-        )
+            catchup_pending[user_id] = {"service": choice, "awaiting": "date"}
+
+            await query.edit_message_text(
+                f"🎧 Catch Up: {choice}\n\n"
+                "Please type the date this catch up is for (YYYY-MM-DD):"
+            )
+
         return
 
     if user_id not in user_sessions:
@@ -2390,27 +2346,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 pass
 
             if response.status_code == 200 and body_status == "success":
-
-                # Snapshot this service's attendance data so a
-                # "Log Catch Up" run later can find it and re-render
-                # the review with a Catch Up section added. Preserve
-                # any catch-up entries already logged against this
-                # same service/date key from an earlier submission.
-                key = f"{session['service']}|{session['service_date']}"
-
-                snapshot = copy.deepcopy(session)
-                snapshot["catch_up"] = submitted_services.get(key, {}).get("catch_up", [])
-                snapshot["submitted_at"] = datetime.now(ZoneInfo("Asia/Manila"))
-
-                submitted_services[key] = snapshot
-
-                if len(submitted_services) > MAX_STORED_SERVICES:
-                    oldest_key = min(
-                        submitted_services,
-                        key=lambda k: submitted_services[k].get("submitted_at", datetime.min)
-                    )
-                    if oldest_key != key:
-                        submitted_services.pop(oldest_key, None)
 
                 del user_sessions[user_id]
 
