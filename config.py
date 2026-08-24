@@ -142,6 +142,7 @@ MEMBER_LISTS = {
         "M Azzel",
         "P Auda",
         "MCor",
+        "Nelissa",
     ],
 
     "CAMPUS FEMALES": [
@@ -182,7 +183,6 @@ MEMBER_LISTS = {
         "Kezia Aquino",
         "NC HM",
         "Reisa",
-        "Nelissa",
     ],
 
     "LLC": [
@@ -815,22 +815,6 @@ MEMBERS = {
     },
 
     "CrF019": {
-        "display_name": "Nelissa",
-        "official_name": "Nelissa",
-        "aliases": [
-            "Nelissa",
-        ],
-        "department": CAREER_FEMALES,
-        "status": ACTIVE,
-        "attendance": attendance(
-            sunday=ONLINE,
-            wednesday=ONLINE,
-            predawn=ONLINE,
-        ),
-        "sort_order": 19,
-    },
-
-    "CrF020": {
         "display_name": "M Ju Nara",
         "official_name": "Krist Anonuevo",
         "aliases": [
@@ -851,7 +835,7 @@ MEMBERS = {
         "sort_order": 20,
     },
 
-    "CrF021": {
+    "CrF020": {
         "display_name": "M Azzel",
         "official_name": "Azzel Lao",
         "aliases": [
@@ -869,7 +853,7 @@ MEMBERS = {
         "sort_order": 22,
     },
 
-    "CrF022": {
+    "CrF021": {
         "display_name": "M Sarah",
         "official_name": "Sarah Alidon",
         "aliases": [
@@ -887,7 +871,7 @@ MEMBERS = {
         "attendance": DEFAULT_ATTENDANCE.copy(),
         "sort_order": 23,
     },
-    "CrF023": {
+    "CrF022": {
         "display_name": "Joannes",
         "official_name": "Joannes Alonsagay",
         "aliases": [
@@ -906,7 +890,7 @@ MEMBERS = {
         "sort_order": 24,
     },
 
-    "CrF024": {
+    "CrF023": {
         "display_name": "P Auda",
         "official_name": "Auda Atienza",
         "aliases": [
@@ -926,7 +910,7 @@ MEMBERS = {
     },
 
 
-     "CrF025": {
+     "CrF024": {
             "display_name": "MCor",
             "official_name": "Corazon Lualhati",
             "aliases": [
@@ -944,22 +928,22 @@ MEMBERS = {
             "sort_order": 27,
     },
 
-    "CrFN001": {
-            "display_name": "Reisa",
-            "official_name": "Reisa Gonzaga",
-            "aliases": [
-                "Reisa",
-                "Reisa Gonzaga",
-            ],
-            "department": NEWCOMERS,
-            "status": ACTIVE,
-            "attendance": attendance(
-                sunday=ONLINE,
-                wednesday=ONLINE,
-                predawn=ONLINE,
-            ),
-            "sort_order": 1,
+    "CrF025": {
+                "display_name": "Nelissa",
+                "official_name": "Nelissa",
+                "aliases": [
+                    "Nelissa",
+                ],
+                "department": CAREER_FEMALES,
+                "status": ACTIVE,
+                "attendance": attendance(
+                    sunday=ONLINE,
+                    wednesday=ONLINE,
+                    predawn=ONLINE,
+                ),
+                "sort_order": 25,
         },
+    
     # =================================================
     # CAMPUS FEMALES
     # =================================================
@@ -1202,7 +1186,7 @@ MEMBERS = {
             "sort_order": 3,
         },
 
-    "JSN001": {
+    "NC001": {
             "display_name": "NC RD",
             "official_name": "NC RD",
             "aliases": [
@@ -1216,10 +1200,10 @@ MEMBERS = {
                 wednesday=ONLINE,
                 predawn=ONLINE,
             ),
-            "sort_order": 9,
+            "sort_order": 1,
     },
 
-    "JSN002": {
+    "NC002": {
                 "display_name": "NC HM",
                 "official_name": "NC HM",
                 "aliases": [
@@ -1233,9 +1217,25 @@ MEMBERS = {
                     wednesday=ONLINE,
                     predawn=ONLINE,
                 ),
-                "sort_order": 10,
+                "sort_order": 2,
     },
     
+    "NC003": {
+                "display_name": "Reisa",
+                "official_name": "Reisa Gonzaga",
+                "aliases": [
+                    "Reisa",
+                    "Reisa Gonzaga",
+                ],
+                "department": NEWCOMERS,
+                "status": NEWCOMER,
+                "attendance": attendance(
+                    sunday=ONLINE,
+                    wednesday=ONLINE,
+                    predawn=ONLINE,
+                ),
+                "sort_order": 3,
+    },
     # =================================================
     # Milky Way and SS
     # =================================================
