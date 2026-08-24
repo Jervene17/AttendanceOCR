@@ -89,6 +89,20 @@ retro_pending = {}
 catchup_pending = {}
 
 # =====================================================
+# Pull Summary
+# =====================================================
+# Pulls the attendance summary for a given service + date directly
+# from the Google Sheet (via a GET to the same WEBHOOK_URL), rather
+# than from any in-memory session. This means it reflects manual
+# edits made in the sheet after submission, and works even after a
+# bot restart or for services submitted from a different device.
+#
+# Built the same way retro/catch-up are: pick a service, then type
+# a date. Keyed by user_id:
+# {"service": <str or None>, "awaiting": "name" | "date"}
+summary_pending = {}
+
+# =====================================================
 # Session Stages
 # =====================================================
 
@@ -243,6 +257,10 @@ async def send_service_menu(message, user_id):
         [InlineKeyboardButton("🎧 Log Catch Up", callback_data="catchup_menu")]
     )
 
+    keyboard.append(
+        [InlineKeyboardButton("📊 Pull Summary", callback_data="summary_menu")]
+    )
+
     await message.reply_text(
         "Attendance Bot V2 is ready.\n\n"
         "Select a service:",
@@ -261,6 +279,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # flow for this user, same idea as an attendance session simply
     # getting overwritten by a fresh begin_session() call.
     catchup_pending.pop(user_id, None)
+    summary_pending.pop(user_id, None)
 
     await send_service_menu(update.message, user_id)
 
@@ -300,6 +319,26 @@ async def catchup(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "🎧 Catch Up — select the service:",
         reply_markup=build_service_keyboard("csvc"),
+    )
+
+
+async def summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    /summary — same entry point as the "📊 Pull Summary" menu button,
+    for people who prefer typing the command directly. Mirrors
+    /retro's shape: pick a service, then type a date. Pulls straight
+    from the Google Sheet, so it reflects any edits made there since
+    the original submission.
+    """
+
+    user_id = update.effective_user.id
+
+    if not await require_organizer(update.message.reply_text, user_id):
+        return
+
+    await update.message.reply_text(
+        "📊 Pull Summary — select the service:",
+        reply_markup=build_service_keyboard("sumsvc"),
     )
 
 
@@ -434,6 +473,18 @@ async def receive_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             return
 
+        # Pull Summary flow: same idea -- still need a date before
+        # fetching from the sheet.
+        if user_id in summary_pending and summary_pending[user_id].get("awaiting") == "name":
+            summary_pending[user_id]["service"] = service_name
+            summary_pending[user_id]["awaiting"] = "date"
+
+            await update.message.reply_text(
+                f"📊 Summary: {service_name}\n\n"
+                "Please type the date to pull (YYYY-MM-DD):"
+            )
+            return
+
         await begin_session(user_id, service_name, update.message.reply_text)
         return
 
@@ -509,6 +560,46 @@ async def receive_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"✅ Added {len(lines)} name(s) for catch up on {service} — {date}.\n"
             f"Total: {len(catchup_pending[user_id]['names'])}\n\n"
             "Send more names, or type /done."
+        )
+        return
+
+    # -----------------------------
+    # PULL SUMMARY: user is typing the date to fetch
+    # -----------------------------
+    if user_id in summary_pending and summary_pending[user_id].get("awaiting") == "date":
+
+        date_text = text.strip()
+
+        try:
+            parsed_date = datetime.strptime(date_text, "%Y-%m-%d")
+        except ValueError:
+            await update.message.reply_text(
+                "Please enter a valid date in YYYY-MM-DD format (e.g. 2026-08-09)."
+            )
+            return
+
+        service = summary_pending.pop(user_id)["service"]
+        service_date = parsed_date.strftime("%Y-%m-%d")
+
+        await update.message.reply_text("📤 Pulling summary...")
+
+        try:
+            entries = await fetch_summary(service, service_date)
+        except Exception as e:
+            await update.message.reply_text(
+                f"⚠️ Couldn't reach the webhook.\n\n{e}"
+            )
+            return
+
+        if entries is None:
+            await update.message.reply_text(
+                "⚠️ Webhook returned an unexpected response."
+            )
+            return
+
+        await update.message.reply_text(
+            render_summary_text(service, service_date, entries),
+            parse_mode="HTML",
         )
         return
 
@@ -962,6 +1053,171 @@ async def submit_catchup(service, service_date, entries):
     )
 
     return response
+
+
+# =====================================================
+# Pull Summary (live from the Google Sheet)
+# =====================================================
+
+async def fetch_summary(service, service_date):
+    """
+    GETs the summary endpoint on the Apps Script webhook. Returns a
+    list of entry dicts (each with name/department/status/source/
+    type) on success, or None if the response wasn't a recognizable
+    success -- distinct from raising, which happens on a network/
+    connection failure instead.
+    """
+
+    response = await asyncio.to_thread(
+        requests.get,
+        WEBHOOK_URL,
+        params={"action": "summary", "service": service, "date": service_date},
+        timeout=30,
+    )
+
+    try:
+        body = response.json()
+    except ValueError:
+        return None
+
+    if response.status_code != 200 or body.get("status") != "success":
+        return None
+
+    return body.get("entries", [])
+
+
+def render_summary_text(service, service_date, entries):
+    """
+    Same overall shape as render_review_text (department breakdown,
+    online/onsite tagging, visitors/newcomers, totals) but built
+    from rows pulled live from the sheet instead of an in-memory
+    session -- so it reflects any edits made directly in the sheet
+    after the original submission, and works for dates/services
+    that were never held in this bot's memory at all (e.g. after a
+    restart).
+    """
+
+    day_name = datetime.strptime(service_date, "%Y-%m-%d").strftime("%A")
+
+    lines = [
+        f"📊 {html.escape(service)} Attendance Summary",
+        f"🗓 {day_name}, {service_date}",
+        "",
+    ]
+
+    if not entries:
+        lines.append("No attendance recorded for this service/date.")
+        return "\n".join(lines)
+
+    members_by_dept = {}
+    visitors, newcomers, catchups, unrecognized = [], [], [], []
+
+    for e in entries:
+        source = e.get("source", "")
+        etype = (e.get("type") or "").strip()
+
+        if source == "Catch Up":
+            catchups.append(e)
+        elif etype == "Visitor":
+            visitors.append(e)
+        elif etype == "Newcomer":
+            newcomers.append(e)
+        elif etype == "Unrecognized":
+            unrecognized.append(e)
+        else:
+            members_by_dept.setdefault(e.get("department", ""), []).append(e)
+
+    total_present = 0
+    total_online = 0
+    total_onsite = 0
+
+    def render_member_row(m):
+        nonlocal total_present, total_online, total_onsite
+        total_present += 1
+        source = m.get("source", "")
+        if source == "Online":
+            total_online += 1
+            tag = "Online"
+        else:
+            total_onsite += 1
+            tag = "<b>Onsite</b>"
+        lines.append(f"   • {html.escape(m['name'])} ({tag})")
+
+    for i, department in enumerate(MEMBER_LISTS.keys()):
+
+        dept_entries = members_by_dept.pop(department, [])
+        color = DEPARTMENT_COLORS[i % len(DEPARTMENT_COLORS)]
+
+        lines.append(f"{color} {html.escape(department)}: {len(dept_entries)}")
+
+        for m in dept_entries:
+            render_member_row(m)
+
+    # Anything left over belongs to a department no longer in
+    # MEMBER_LISTS (e.g. someone since moved departments) -- still
+    # show it rather than silently dropping people from a
+    # historical summary.
+    for department, dept_entries in members_by_dept.items():
+
+        lines.append(f"⚪ {html.escape(department)}: {len(dept_entries)}")
+
+        for m in dept_entries:
+            render_member_row(m)
+
+    for v in visitors:
+        total_present += 1
+        if v.get("source") == "Online":
+            total_online += 1
+        else:
+            total_onsite += 1
+
+    for n in newcomers:
+        total_present += 1
+        if n.get("source") == "Online":
+            total_online += 1
+        else:
+            total_onsite += 1
+
+    lines.append("")
+    lines.append(f"👥 Total Present: {total_present}")
+    lines.append(f"💻 Total Online: {total_online}")
+    lines.append(f"🏛 Total Onsite: {total_onsite}")
+
+    if visitors:
+        lines.append("")
+        lines.append("👥 Visitors")
+
+        for v in visitors:
+            source_part = f", {html.escape(v.get('source', ''))}" if v.get("source") else ""
+            lines.append(
+                f"• {html.escape(v['name'])} (from {html.escape(v.get('department', ''))}{source_part})"
+            )
+
+    if newcomers:
+        lines.append("")
+        lines.append("🌱 Newcomers")
+
+        for n in newcomers:
+            source_part = f", {html.escape(n.get('source', ''))}" if n.get("source") else ""
+            lines.append(
+                f"• {html.escape(n['name'])} ({html.escape(n.get('department', ''))}{source_part})"
+            )
+
+    if unrecognized:
+        lines.append("")
+        lines.append("❓ Unrecognized")
+
+        for u in unrecognized:
+            lines.append(f"• {html.escape(u['name'])}")
+
+    if catchups:
+        lines.append("")
+        lines.append("🎧 Catch Up")
+
+        for c in catchups:
+            lines.append(f"• {html.escape(c['name'])}")
+
+    return "\n".join(lines)
 
 
 # =====================================================
@@ -1797,6 +2053,41 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         return
 
+    # -----------------------------
+    # Pull Summary menu
+    # -----------------------------
+    if action == "summary_menu":
+
+        await query.edit_message_text(
+            "📊 Pull Summary — select the service:",
+            reply_markup=build_service_keyboard("sumsvc"),
+        )
+        return
+
+    if action.startswith("sumsvc:"):
+
+        choice = action.split(":", 1)[1]
+
+        if choice == "special":
+
+            awaiting_special_service.add(user_id)
+            summary_pending[user_id] = {"service": None, "awaiting": "name"}
+
+            await query.edit_message_text(
+                "Please type the name of the Service/Event:"
+            )
+
+        else:
+
+            summary_pending[user_id] = {"service": choice, "awaiting": "date"}
+
+            await query.edit_message_text(
+                f"📊 Summary: {choice}\n\n"
+                "Please type the date to pull (YYYY-MM-DD):"
+            )
+
+        return
+
     if user_id not in user_sessions:
 
         await query.edit_message_text(
@@ -2457,6 +2748,7 @@ app.add_handler(CommandHandler("wednesday", wednesday))
 app.add_handler(CommandHandler("friday", friday))
 app.add_handler(CommandHandler("retro", retro))
 app.add_handler(CommandHandler("catchup", catchup))
+app.add_handler(CommandHandler("summary", summary))
 app.add_handler(CommandHandler("done", done))
 app.add_handler(CommandHandler("skip", skip))
 
