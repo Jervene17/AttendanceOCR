@@ -141,8 +141,6 @@ MEMBER_LISTS = {
         "M Sarah",
         "M Azzel",
         "P Auda",
-        "Reisa",
-        "Nelissa",
         "MCor",
     ],
 
@@ -183,6 +181,8 @@ MEMBER_LISTS = {
         "NC RD",
         "Kezia Aquino",
         "NC HM",
+        "Reisa",
+        "Nelissa",
     ],
 
     "LLC": [
@@ -831,22 +831,6 @@ MEMBERS = {
     },
 
     "CrF020": {
-        "display_name": "Reisa",
-        "official_name": "Reisa Gonzaga",
-        "aliases": [
-            "Reisa",
-            "Reisa Gonzaga",
-        ],
-        "department": CAREER_FEMALES,
-        "status": ACTIVE,
-        "attendance": attendance(
-            sunday=ONLINE,
-            wednesday=ONLINE,
-            predawn=ONLINE,
-        ),
-        "sort_order": 20,
-    },
-    "CrF021": {
         "display_name": "M Ju Nara",
         "official_name": "Krist Anonuevo",
         "aliases": [
@@ -864,10 +848,10 @@ MEMBERS = {
         "department": CAREER_FEMALES,
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
-        "sort_order": 21,
+        "sort_order": 20,
     },
 
-    "CrF022": {
+    "CrF021": {
         "display_name": "M Azzel",
         "official_name": "Azzel Lao",
         "aliases": [
@@ -885,7 +869,7 @@ MEMBERS = {
         "sort_order": 22,
     },
 
-    "CrF023": {
+    "CrF022": {
         "display_name": "M Sarah",
         "official_name": "Sarah Alidon",
         "aliases": [
@@ -903,7 +887,7 @@ MEMBERS = {
         "attendance": DEFAULT_ATTENDANCE.copy(),
         "sort_order": 23,
     },
-    "CrF024": {
+    "CrF023": {
         "display_name": "Joannes",
         "official_name": "Joannes Alonsagay",
         "aliases": [
@@ -922,7 +906,7 @@ MEMBERS = {
         "sort_order": 24,
     },
 
-    "CrF025": {
+    "CrF024": {
         "display_name": "P Auda",
         "official_name": "Auda Atienza",
         "aliases": [
@@ -942,7 +926,7 @@ MEMBERS = {
     },
 
 
-     "CrF026": {
+     "CrF025": {
             "display_name": "MCor",
             "official_name": "Corazon Lualhati",
             "aliases": [
@@ -959,6 +943,23 @@ MEMBERS = {
             "attendance": DEFAULT_ATTENDANCE.copy(),
             "sort_order": 27,
     },
+
+    "CrFN001": {
+            "display_name": "Reisa",
+            "official_name": "Reisa Gonzaga",
+            "aliases": [
+                "Reisa",
+                "Reisa Gonzaga",
+            ],
+            "department": NEWCOMERS,
+            "status": ACTIVE,
+            "attendance": attendance(
+                sunday=ONLINE,
+                wednesday=ONLINE,
+                predawn=ONLINE,
+            ),
+            "sort_order": 1,
+        },
     # =================================================
     # CAMPUS FEMALES
     # =================================================
@@ -1054,12 +1055,10 @@ MEMBERS = {
 
     "JS005": {
         "display_name": "Michelle",
-        "official_name": "Michelle Bautista",
+        "official_name": "Michelle Payumo",
         "aliases": [
-            "Michelle B",
-            "Michelle Bautista",
-            "Mitch Bautista",
-            "Michelle",
+            "Michelle P",
+            "Michelle Payumo",            
         ],
         "department": JSF,
         "status": ACTIVE,
@@ -1493,7 +1492,25 @@ MEMBERS = {
                 predawn=ONLINE,
             ),
             "sort_order": 8,
-        },
+    },
+
+    "OPM009": {
+            "display_name": "Michelle",
+            "official_name": "Michelle Bautista",
+            "aliases": [
+                "Michelle B",
+                "Michelle Bautista",
+                "Mitch Bautista",            
+            ],
+            "department": OPM,
+            "status": ACTIVE,
+            "attendance": attendance(
+                sunday=ONLINE,
+                wednesday=ONLINE,
+                predawn=ONLINE,
+            ),
+            "sort_order": 9,
+    },
     # =================================================
     # LORD'S LOVE CHURCH
     # =================================================
