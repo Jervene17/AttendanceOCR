@@ -199,6 +199,7 @@ async def begin_session(user_id, service, reply_func, service_date=None, is_retr
         "newcomer_pending_name": None,
         "newcomer_pending_department": None,
         "newcomer_names": None,
+        "newcomer_names_by_church": None,
 
         # Department verification
         "current_department": None,
@@ -1097,6 +1098,13 @@ async def fetch_newcomer_names():
     syncAttendanceToTrackerLastActivity never needs fuzzy matching
     for names entered this way.
 
+    Returns a dict GROUPED BY CHURCH, e.g.
+    {"LGC": [...], "LLC": [...], "LVC": [...]} -- the combined list
+    across all three churches was large enough to exceed Telegram's
+    inline keyboard button limit, silently dropping names past a
+    certain point alphabetically. Grouping lets the picker show one
+    church's names at a time, well under that limit.
+
     Raises RuntimeError on any non-success response (unreachable
     webhook, bad JSON, or an explicit {"status": "error", ...} body)
     so callers can fall back to free-typed entry.
@@ -1117,7 +1125,7 @@ async def fetch_newcomer_names():
     if response.status_code != 200 or body.get("status") != "success":
         raise RuntimeError(body.get("message", f"HTTP {response.status_code}"))
 
-    return body.get("names", [])
+    return body.get("names", {})
 
 
 def render_summary_text(service, service_date, entries):
@@ -1421,19 +1429,34 @@ def build_department_picker(prefix):
     return InlineKeyboardMarkup(keyboard)
 
 
+def build_newcomer_church_keyboard(names_by_church):
+
+    keyboard = [
+        [InlineKeyboardButton(f"{church} ({len(names)})", callback_data=f"nchurch:{church}")]
+        for church, names in names_by_church.items()
+        if names
+    ]
+    keyboard.append(
+        [InlineKeyboardButton("✏️ Other (type manually)", callback_data="nnc_other")]
+    )
+
+    return InlineKeyboardMarkup(keyboard)
+
+
 async def show_newcomer_picker(send_func, session):
     """
-    Shows an inline picker of names pulled from the tracker sheet
-    (via the webhook's `newcomers` action) instead of asking for a
-    free-typed name, so what gets saved to the Attendance Log matches
-    the tracker sheet exactly. Falls back to free-typed entry if the
-    webhook call fails or the list comes back empty -- typing is
-    still allowed for anyone genuinely not on the tracker yet.
+    Step 1 of newcomer selection: pick a church first (LGC/LLC/LVC),
+    then names for that church only -- keeps each keyboard well
+    under Telegram's inline button limit, unlike showing all three
+    churches' names merged into one list. Falls back to free-typed
+    entry if the webhook call fails or nothing comes back -- typing
+    is still allowed for anyone genuinely not on the tracker yet.
     """
 
     try:
-        names = await fetch_newcomer_names()
+        names_by_church = await fetch_newcomer_names()
     except Exception as e:
+        session["newcomer_names_by_church"] = None
         session["newcomer_names"] = None
         await send_func(
             f"⚠️ Couldn't load the newcomer list from the sheet.\n\n{e}\n\n"
@@ -1441,26 +1464,20 @@ async def show_newcomer_picker(send_func, session):
         )
         return
 
-    if not names:
+    if not names_by_church or not any(names_by_church.values()):
+        session["newcomer_names_by_church"] = None
         session["newcomer_names"] = None
         await send_func(
             "⚠️ No names came back from the sheet. Type the newcomer's name instead:"
         )
         return
 
-    session["newcomer_names"] = names
-
-    keyboard = [
-        [InlineKeyboardButton(name, callback_data=f"nnc:{i}")]
-        for i, name in enumerate(names)
-    ]
-    keyboard.append(
-        [InlineKeyboardButton("✏️ Other (type manually)", callback_data="nnc_other")]
-    )
+    session["newcomer_names_by_church"] = names_by_church
+    session["newcomer_names"] = None
 
     await send_func(
-        text="👤 Select the newcomer:",
-        reply_markup=InlineKeyboardMarkup(keyboard),
+        text="👤 Which church?",
+        reply_markup=build_newcomer_church_keyboard(names_by_church),
     )
 
 
@@ -2593,6 +2610,50 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         session["newcomer_pending_department"] = None
 
         await show_newcomer_picker(query.message.reply_text, session)
+
+        return
+
+    elif action.startswith("nchurch:"):
+
+        church = action.split(":", 1)[1]
+
+        session = user_sessions[user_id]
+        names_by_church = session.get("newcomer_names_by_church") or {}
+        names = names_by_church.get(church, [])
+
+        if not names:
+            await query.edit_message_text(f"No names found for {church}.")
+            return
+
+        session["newcomer_names"] = names
+
+        keyboard = [
+            [InlineKeyboardButton(name, callback_data=f"nnc:{i}")]
+            for i, name in enumerate(names)
+        ]
+        keyboard.append([InlineKeyboardButton("⬅ Back", callback_data="nnc_back")])
+        keyboard.append([InlineKeyboardButton("✏️ Other (type manually)", callback_data="nnc_other")])
+
+        await query.edit_message_text(
+            f"👤 Select the newcomer ({church}):",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+        )
+
+        return
+
+    elif action == "nnc_back":
+
+        session = user_sessions[user_id]
+        names_by_church = session.get("newcomer_names_by_church")
+
+        if not names_by_church:
+            await show_newcomer_picker(query.message.reply_text, session)
+            return
+
+        await query.edit_message_text(
+            "👤 Which church?",
+            reply_markup=build_newcomer_church_keyboard(names_by_church),
+        )
 
         return
 
