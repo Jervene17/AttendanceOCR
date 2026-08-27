@@ -198,6 +198,7 @@ async def begin_session(user_id, service, reply_func, service_date=None, is_retr
         "visitor_pending_from": None,
         "newcomer_pending_name": None,
         "newcomer_pending_department": None,
+        "newcomer_names": None,
 
         # Department verification
         "current_department": None,
@@ -1086,6 +1087,39 @@ async def fetch_summary(service, service_date):
     return body.get("entries", [])
 
 
+async def fetch_newcomer_names():
+    """
+    GETs the newcomer list from the webhook (action=newcomers), which
+    reads column A (row 3+) of the LGC/LLC/LVC tabs on the lecture
+    bot's spreadsheet and strips each entry down to a plain name (no
+    department tag). Keeping this the source for the newcomer picker
+    means names logged here match the tracker sheet verbatim, so
+    syncAttendanceToTrackerLastActivity never needs fuzzy matching
+    for names entered this way.
+
+    Raises RuntimeError on any non-success response (unreachable
+    webhook, bad JSON, or an explicit {"status": "error", ...} body)
+    so callers can fall back to free-typed entry.
+    """
+
+    response = await asyncio.to_thread(
+        requests.get,
+        WEBHOOK_URL,
+        params={"action": "newcomers"},
+        timeout=30,
+    )
+
+    try:
+        body = response.json()
+    except ValueError:
+        raise RuntimeError(f"Webhook returned an unexpected response (HTTP {response.status_code}).")
+
+    if response.status_code != 200 or body.get("status") != "success":
+        raise RuntimeError(body.get("message", f"HTTP {response.status_code}"))
+
+    return body.get("names", [])
+
+
 def render_summary_text(service, service_date, entries):
     """
     Same overall shape as render_review_text (department breakdown,
@@ -1385,6 +1419,49 @@ def build_department_picker(prefix):
     ]
 
     return InlineKeyboardMarkup(keyboard)
+
+
+async def show_newcomer_picker(send_func, session):
+    """
+    Shows an inline picker of names pulled from the tracker sheet
+    (via the webhook's `newcomers` action) instead of asking for a
+    free-typed name, so what gets saved to the Attendance Log matches
+    the tracker sheet exactly. Falls back to free-typed entry if the
+    webhook call fails or the list comes back empty -- typing is
+    still allowed for anyone genuinely not on the tracker yet.
+    """
+
+    try:
+        names = await fetch_newcomer_names()
+    except Exception as e:
+        session["newcomer_names"] = None
+        await send_func(
+            f"⚠️ Couldn't load the newcomer list from the sheet.\n\n{e}\n\n"
+            "Type the newcomer's name instead:"
+        )
+        return
+
+    if not names:
+        session["newcomer_names"] = None
+        await send_func(
+            "⚠️ No names came back from the sheet. Type the newcomer's name instead:"
+        )
+        return
+
+    session["newcomer_names"] = names
+
+    keyboard = [
+        [InlineKeyboardButton(name, callback_data=f"nnc:{i}")]
+        for i, name in enumerate(names)
+    ]
+    keyboard.append(
+        [InlineKeyboardButton("✏️ Other (type manually)", callback_data="nnc_other")]
+    )
+
+    await send_func(
+        text="👤 Select the newcomer:",
+        reply_markup=InlineKeyboardMarkup(keyboard),
+    )
 
 
 def update_master_attendance(session, result, source):
@@ -2515,13 +2592,33 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         session["newcomer_pending_name"] = None
         session["newcomer_pending_department"] = None
 
-        await query.message.reply_text(
+        await show_newcomer_picker(query.message.reply_text, session)
 
-            "Enter the newcomer's name.\n\n"
+        return
 
-            "When finished adding newcomers, type /done."
+    elif action.startswith("nnc:"):
 
+        idx = int(action.split(":", 1)[1])
+
+        session = user_sessions[user_id]
+        names = session.get("newcomer_names") or []
+
+        if idx >= len(names):
+            return
+
+        name = names[idx]
+        session["newcomer_pending_name"] = name
+
+        await query.edit_message_text(
+            f"Department for \"{name}\"?",
+            reply_markup=build_department_picker("ndept")
         )
+
+        return
+
+    elif action == "nnc_other":
+
+        await query.edit_message_text("✏️ Type the newcomer's name:")
 
         return
 
