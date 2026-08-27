@@ -1652,11 +1652,11 @@ MEMBERS = {
     },
 
     "LVC002": {
-        "display_name": "Kezia",
-        "official_name": "Kezia Aquino",
+        "display_name": "Kezzia Aquino",
+        "official_name": "Kezzia Aquino",
         "aliases": [
-            "Kezia",
-            "Kezia Aquino",
+            "Kezzia",
+            "Kezzia Aquino",
         ],
         "department": LVC,
         "status": NEWCOMER,
