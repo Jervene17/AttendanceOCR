@@ -1187,8 +1187,8 @@ MEMBERS = {
         },
 
     "NC001": {
-            "display_name": "NC RD",
-            "official_name": "NC RD",
+            "display_name": "RT-RD",
+            "official_name": "RT-RD",
             "aliases": [
                 "NC RD",
                 "NC_RD",
@@ -1204,8 +1204,8 @@ MEMBERS = {
     },
 
     "NC002": {
-                "display_name": "NC HM",
-                "official_name": "NC HM",
+                "display_name": "RT-HM",
+                "official_name": "RT-HM",
                 "aliases": [
                     "NC HM",
                     "NC_HM",
