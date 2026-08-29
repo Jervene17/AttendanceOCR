@@ -222,7 +222,8 @@ async def begin_session(user_id, service, reply_func, service_date=None, is_retr
         f"{header}\n\n"
         "Please upload ONLINE participant screenshots.\n\n"
         "When finished, type:\n"
-        "/done"
+        "/done\n\n"
+        "If nobody attended online, type /skip."
     )
 
 
@@ -2859,7 +2860,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def skip(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    /skip — nobody attended onsite at all; moves straight to review.
+    /skip — nobody attended online (or onsite) at all; moves
+    straight to the next stage / review.
     """
 
     user_id = update.effective_user.id
@@ -2869,6 +2871,16 @@ async def skip(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     session = user_sessions[user_id]
+
+    if session["stage"] == STAGE_ONLINE:
+        session["online_result"] = {"recognized": [], "unknown": []}
+
+        await update.message.reply_text(
+            "🟢 Online attendance skipped — no online attendees recorded."
+        )
+
+        await continue_after_online(update.message.reply_text, context, user_id, session)
+        return
 
     if session["stage"] == STAGE_ONSITE:
         session["onsite_result"] = {"recognized": [], "unknown": []}
@@ -2882,7 +2894,6 @@ async def skip(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     await update.message.reply_text("Nothing to skip right now.")
-
 
 async def debug_any(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("UPDATE RECEIVED")
