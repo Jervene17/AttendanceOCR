@@ -943,7 +943,23 @@ MEMBERS = {
                 ),
                 "sort_order": 25,
         },
-    
+    "CrF026": {
+                    "display_name": "P Sae Sol",
+                    "official_name": "P Sae Sol",
+                    "aliases": [
+                        "P Sae Sol",
+                        "PSS",
+                        "Sae Sol",
+                    ],
+                    "department": CAREER_FEMALES,
+                    "status": ACTIVE,
+                    "attendance": attendance(
+                        sunday=ONLINE,
+                        wednesday=ONLINE,
+                        predawn=ONLINE,
+                    ),
+                    "sort_order": 25,
+            },
     # =================================================
     # CAMPUS FEMALES
     # =================================================
