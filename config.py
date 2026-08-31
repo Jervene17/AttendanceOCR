@@ -143,6 +143,7 @@ MEMBER_LISTS = {
         "P Auda",
         "MCor",
         "Nelissa",
+        "P Sae Sol",
     ],
 
     "CAMPUS FEMALES": [
