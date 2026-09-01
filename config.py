@@ -32,6 +32,7 @@ NEWCOMERS = "Newcomers"
 ACTIVE = "ACTIVE"
 INACTIVE = "INACTIVE"
 NEWCOMER = "NEWCOMER"
+MISSIONARY = "Missionary"
 
 # Attendance modes
 ONLINE = "ONLINE"
@@ -833,7 +834,7 @@ MEMBERS = {
         "department": CAREER_FEMALES,
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
-        "sort_order": 20,
+        "sort_order": 19,
     },
 
     "CrF020": {
@@ -851,7 +852,7 @@ MEMBERS = {
         "department": CAREER_FEMALES,
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
-        "sort_order": 22,
+        "sort_order": 20,
     },
 
     "CrF021": {
@@ -870,7 +871,7 @@ MEMBERS = {
         "department": CAREER_FEMALES,
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
-        "sort_order": 23,
+        "sort_order": 21,
     },
     "CrF022": {
         "display_name": "Joannes",
@@ -888,7 +889,7 @@ MEMBERS = {
         "department": CAREER_FEMALES,
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
-        "sort_order": 24,
+        "sort_order": 22,
     },
 
     "CrF023": {
@@ -907,7 +908,7 @@ MEMBERS = {
         "department": CAREER_FEMALES,
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
-        "sort_order": 25,
+        "sort_order": 23,
     },
 
 
@@ -926,7 +927,7 @@ MEMBERS = {
             "department": CAREER_FEMALES,
             "status": ACTIVE,
             "attendance": DEFAULT_ATTENDANCE.copy(),
-            "sort_order": 27,
+            "sort_order": 24,
     },
 
     "CrF025": {
@@ -951,15 +952,18 @@ MEMBERS = {
                         "P Sae Sol",
                         "PSS",
                         "Sae Sol",
+                        "PS",
+                        "PSol",
+                        "P Sol",
                     ],
                     "department": CAREER_FEMALES,
-                    "status": ACTIVE,
+                    "status": MISSIONARY,
                     "attendance": attendance(
                         sunday=ONLINE,
                         wednesday=ONLINE,
                         predawn=ONLINE,
                     ),
-                    "sort_order": 25,
+                    "sort_order": 26,
             },
     # =================================================
     # CAMPUS FEMALES
