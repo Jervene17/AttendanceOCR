@@ -44,6 +44,7 @@ from members import (
     ORGANIZER_IDS,
     get_member_type,
     DISPLAY_NAME_TO_MEMBER,
+    find_member,
 )
 
 # Load environment variables
@@ -101,6 +102,37 @@ catchup_pending = {}
 # a date. Keyed by user_id:
 # {"service": <str or None>, "awaiting": "name" | "date"}
 summary_pending = {}
+
+# =====================================================
+# Correct Attendance
+# =====================================================
+# Same starting shape as Pull Summary (pick service, type date),
+# but instead of just rendering the log, it's fetched into
+# `entries` (each carrying its sheet `row`) so individual entries
+# can be removed, and Member/Newcomer/Visitor entries that were
+# missed can be added — all applied directly against the sheet via
+# the webhook's "correction" entry_type, not against any
+# in-memory session.
+#
+# Keyed by user_id:
+# {
+#   "service": <str or None>,
+#   "awaiting": "name" | "date" | "menu"
+#             | "add_member_name" | "add_member_source"
+#             | "add_newcomer" (sub-steps use newcomer_pending_* keys)
+#             | "add_visitor_name" | "add_visitor_from" | "add_visitor_source",
+#   "date": <"YYYY-MM-DD", set once the date step is done>,
+#   "entries": [{"row": int, "department": str, "name": str,
+#                "source": str, "type": str}, ...],
+#   "page": <int, 0-based index of the currently displayed page
+#            of entries>,
+# }
+correction_pending = {}
+
+# How many logged entries are shown per page in the Correct
+# Attendance menu -- keeps the inline keyboard well under Telegram's
+# button limit even for a service/date with 50+ entries.
+CORRECTION_PAGE_SIZE = 20
 
 # =====================================================
 # Session Stages
@@ -264,6 +296,10 @@ async def send_service_menu(message, user_id):
         [InlineKeyboardButton("📊 Pull Summary", callback_data="summary_menu")]
     )
 
+    keyboard.append(
+        [InlineKeyboardButton("✏️ Correct Attendance", callback_data="correct_menu")]
+    )
+
     await message.reply_text(
         "Attendance Bot V2 is ready.\n\n"
         "Select a service:",
@@ -283,6 +319,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # getting overwritten by a fresh begin_session() call.
     catchup_pending.pop(user_id, None)
     summary_pending.pop(user_id, None)
+    correction_pending.pop(user_id, None)
 
     await send_service_menu(update.message, user_id)
 
@@ -342,6 +379,21 @@ async def summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "📊 Pull Summary — select the service:",
         reply_markup=build_service_keyboard("sumsvc"),
+    )
+
+
+async def correct(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    /correct — same entry point as the "✏️ Correct Attendance" menu
+    button. Mirrors /summary's shape: pick a service, then type a
+    date, then act on the entries pulled live from the sheet.
+    """
+    user_id = update.effective_user.id
+    if not await require_organizer(update.message.reply_text, user_id):
+        return
+    await update.message.reply_text(
+        "✏️ Correct Attendance — select the service:",
+        reply_markup=build_service_keyboard("corsvc"),
     )
 
 
@@ -488,6 +540,16 @@ async def receive_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             return
 
+        # Correction flow: still need a date before pulling entries.
+        if user_id in correction_pending and correction_pending[user_id].get("awaiting") == "name":
+            correction_pending[user_id]["service"] = service_name
+            correction_pending[user_id]["awaiting"] = "date"
+            await update.message.reply_text(
+                f"✏️ Correct: {service_name}\n\n"
+                "Please type the date to correct (YYYY-MM-DD):"
+            )
+            return
+
         await begin_session(user_id, service_name, update.message.reply_text)
         return
 
@@ -603,6 +665,145 @@ async def receive_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             render_summary_text(service, service_date, entries),
             parse_mode="HTML",
+        )
+        return
+
+    # -----------------------------
+    # CORRECTION: user is typing the date to pull for correcting
+    # -----------------------------
+    if user_id in correction_pending and correction_pending[user_id].get("awaiting") == "date":
+
+        date_text = text.strip()
+
+        try:
+            parsed_date = datetime.strptime(date_text, "%Y-%m-%d")
+        except ValueError:
+            await update.message.reply_text(
+                "Please enter a valid date in YYYY-MM-DD format (e.g. 2026-08-09)."
+            )
+            return
+
+        service = correction_pending[user_id]["service"]
+        service_date = parsed_date.strftime("%Y-%m-%d")
+
+        await update.message.reply_text("📤 Loading current log...")
+
+        try:
+            entries = await fetch_summary(service, service_date)
+        except Exception as e:
+            await update.message.reply_text(f"⚠️ Couldn't reach the webhook.\n\n{e}")
+            correction_pending.pop(user_id, None)
+            return
+
+        if entries is None:
+            await update.message.reply_text("⚠️ Webhook returned an unexpected response.")
+            correction_pending.pop(user_id, None)
+            return
+
+        correction_pending[user_id].update({
+            "date": service_date,
+            "awaiting": "menu",
+            "entries": entries,
+            "page": 0,
+        })
+
+        await send_correction_menu(update.message.reply_text, correction_pending[user_id])
+        return
+
+    # -----------------------------
+    # CORRECTION: typing a member's name to add
+    # -----------------------------
+    if user_id in correction_pending and correction_pending[user_id].get("awaiting") == "add_member_name":
+
+        typed = text.strip()
+
+        if not typed:
+            return
+
+        member = find_member(typed)
+
+        if not member:
+            await update.message.reply_text(
+                f"⚠️ \"{typed}\" wasn't found in the roster. Check the spelling and try again, "
+                "or use ➕ Add Newcomer / ➕ Add Visitor if they're not a member."
+            )
+            return
+
+        correction_pending[user_id]["pending_add"] = {
+            "name": member["display_name"],
+            "department": member["department"],
+            "type": get_member_type(member),
+        }
+        correction_pending[user_id]["awaiting"] = "add_member_source"
+
+        await update.message.reply_text(
+            f"Was {member['display_name']} Online or Onsite?",
+            reply_markup=InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton("💻 Online", callback_data="coraddsrc:Online"),
+                    InlineKeyboardButton("🏛 Onsite", callback_data="coraddsrc:Onsite"),
+                ]
+            ])
+        )
+        return
+
+    # -----------------------------
+    # CORRECTION: typing a newcomer's name manually
+    # (only reached via the "✏️ Other" button in the picker)
+    # -----------------------------
+    if (
+        user_id in correction_pending
+        and correction_pending[user_id].get("awaiting") == "add_newcomer"
+        and correction_pending[user_id].get("newcomer_pending_name") is None
+    ):
+
+        name = text.strip()
+
+        if not name:
+            return
+
+        correction_pending[user_id]["newcomer_pending_name"] = name
+
+        await update.message.reply_text(
+            f"Department for \"{name}\"?",
+            reply_markup=build_department_picker("ndept")
+        )
+        return
+
+    # -----------------------------
+    # CORRECTION: typing a visitor's name / "from"
+    # -----------------------------
+    if user_id in correction_pending and correction_pending[user_id].get("awaiting") == "add_visitor_name":
+
+        typed = text.strip()
+
+        if not typed:
+            return
+
+        correction_pending[user_id]["pending_visitor_name"] = typed
+        correction_pending[user_id]["awaiting"] = "add_visitor_from"
+
+        await update.message.reply_text(f"The visitor \"{typed}\" is from?")
+        return
+
+    if user_id in correction_pending and correction_pending[user_id].get("awaiting") == "add_visitor_from":
+
+        typed = text.strip()
+
+        if not typed:
+            return
+
+        correction_pending[user_id]["pending_visitor_from"] = typed
+        correction_pending[user_id]["awaiting"] = "add_visitor_source"
+
+        await update.message.reply_text(
+            f"Was {correction_pending[user_id]['pending_visitor_name']} Online or Onsite?",
+            reply_markup=InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton("💻 Online", callback_data="coraddvsrc:Online"),
+                    InlineKeyboardButton("🏛 Onsite", callback_data="coraddvsrc:Onsite"),
+                ]
+            ])
         )
         return
 
@@ -1261,6 +1462,142 @@ def render_summary_text(service, service_date, entries):
             lines.append(f"• {html.escape(c['name'])}")
 
     return "\n".join(lines)
+
+
+async def submit_correction(service, service_date, action, row=None, member=None):
+    """
+    Posts a correction to WEBHOOK_URL. entry_type == "correction"
+    routes to applyCorrection() on the Apps Script side, which
+    either deletes a specific row (action="remove") or appends one
+    (action="add") directly in "Attendance Log".
+    """
+    payload = {
+        "entry_type": "correction",
+        "action": action,
+        "service": service,
+        "service_date": service_date,
+    }
+    if row is not None:
+        payload["row"] = row
+    if member is not None:
+        payload["member"] = member
+    response = await asyncio.to_thread(
+        requests.post,
+        WEBHOOK_URL,
+        json=payload,
+        timeout=30,
+    )
+    return response
+
+
+def parse_webhook_body(response):
+    try:
+        body = response.json()
+        return body.get("status"), body.get("message")
+    except ValueError:
+        return None, None
+
+
+def get_newcomer_context(user_id):
+    """
+    The newcomer-picker callbacks (nchurch/nnc/ndept/nsrc) are
+    shared by two different flows: adding a newcomer mid-attendance-
+    session, and adding one via Correct Attendance. Returns
+    (context_dict, "session"|"correction") for whichever flow is
+    currently active for this user, or (None, None) if neither.
+    """
+    pending = correction_pending.get(user_id)
+    if pending and pending.get("awaiting", "").startswith("add_newcomer"):
+        return pending, "correction"
+    if user_id in user_sessions:
+        return user_sessions[user_id], "session"
+    return None, None
+
+
+def _correction_page_bounds(pending):
+    """
+    Clamps pending["page"] into range for the current entry count
+    and returns (page, total_pages, start_idx, end_idx) -- start/end
+    are the slice bounds (end exclusive) of entries shown on that
+    page. Keeps pagination correct even after an add/remove changes
+    how many entries there are.
+    """
+    entries = pending["entries"]
+    total_pages = max(1, -(-len(entries) // CORRECTION_PAGE_SIZE))  # ceil div
+
+    page = pending.get("page", 0)
+    page = max(0, min(page, total_pages - 1))
+    pending["page"] = page
+
+    start = page * CORRECTION_PAGE_SIZE
+    end = start + CORRECTION_PAGE_SIZE
+
+    return page, total_pages, start, end
+
+
+def build_correction_text(pending):
+    service = pending["service"]
+    date = pending["date"]
+    entries = pending["entries"]
+    day_name = datetime.strptime(date, "%Y-%m-%d").strftime("%A")
+    lines = [
+        f"✏️ Correcting: {html.escape(service)}",
+        f"🗓 {day_name}, {date}",
+        "",
+    ]
+    if not entries:
+        lines.append("No entries currently logged for this service/date.")
+    else:
+        page, total_pages, start, end = _correction_page_bounds(pending)
+        lines.append(f"Currently logged ({len(entries)}):")
+        if total_pages > 1:
+            lines.append(f"Page {page + 1}/{total_pages}")
+        lines.append("")
+        for e in entries[start:end]:
+            lines.append(f"• {e['name']} — {e.get('department', '')} ({e.get('source', '')})")
+    lines.append("")
+    lines.append("Tap a name below to remove it, or use ➕ Add for someone missed.")
+    return "\n".join(lines)
+
+
+def build_correction_keyboard(pending):
+    keyboard = []
+
+    _, total_pages, start, end = _correction_page_bounds(pending)
+    page = pending["page"]
+
+    for i, e in enumerate(pending["entries"][start:end], start=start):
+        keyboard.append(
+            [InlineKeyboardButton(f"❌ {e['name']}", callback_data=f"cordel:{i}")]
+        )
+
+    if total_pages > 1:
+        nav_row = []
+        if page > 0:
+            nav_row.append(InlineKeyboardButton("⬅ Prev", callback_data=f"corpage:{page - 1}"))
+        nav_row.append(InlineKeyboardButton(f"{page + 1}/{total_pages}", callback_data="corpage:noop"))
+        if page < total_pages - 1:
+            nav_row.append(InlineKeyboardButton("Next ➡", callback_data=f"corpage:{page + 1}"))
+        keyboard.append(nav_row)
+
+    keyboard.append([
+        InlineKeyboardButton("➕ Add Member", callback_data="coraddmember"),
+        InlineKeyboardButton("➕ Add Newcomer", callback_data="coraddnewcomer"),
+    ])
+    keyboard.append([
+        InlineKeyboardButton("➕ Add Visitor", callback_data="coraddvisitor"),
+    ])
+    keyboard.append([
+        InlineKeyboardButton("✅ Finish Correcting", callback_data="cordone"),
+    ])
+    return InlineKeyboardMarkup(keyboard)
+
+
+async def send_correction_menu(send_func, pending):
+    await send_func(
+        text=build_correction_text(pending),
+        reply_markup=build_correction_keyboard(pending),
+    )
 
 
 # =====================================================
@@ -2183,6 +2520,202 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         return
 
+    # -----------------------------
+    # Correct Attendance menu
+    # -----------------------------
+    if action == "correct_menu":
+        await query.edit_message_text(
+            "✏️ Correct Attendance — select the service:",
+            reply_markup=build_service_keyboard("corsvc"),
+        )
+        return
+
+    if action.startswith("corsvc:"):
+        choice = action.split(":", 1)[1]
+        if choice == "special":
+            awaiting_special_service.add(user_id)
+            correction_pending[user_id] = {"service": None, "awaiting": "name"}
+            await query.edit_message_text(
+                "Please type the name of the Service/Event:"
+            )
+        else:
+            correction_pending[user_id] = {"service": choice, "awaiting": "date"}
+            await query.edit_message_text(
+                f"✏️ Correct: {choice}\n\n"
+                "Please type the date to correct (YYYY-MM-DD):"
+            )
+        return
+
+    # -----------------------------
+    # Correct Attendance: page navigation
+    # -----------------------------
+    if action.startswith("corpage:"):
+
+        pending = correction_pending.get(user_id)
+
+        if not pending:
+            return
+
+        target = action.split(":", 1)[1]
+
+        if target != "noop":
+            pending["page"] = int(target)
+
+        await query.edit_message_text(
+            build_correction_text(pending),
+            reply_markup=build_correction_keyboard(pending),
+        )
+        return
+
+    # -----------------------------
+    # Correct Attendance: remove an entry
+    # -----------------------------
+    if action.startswith("cordel:"):
+
+        idx = int(action.split(":", 1)[1])
+        pending = correction_pending.get(user_id)
+
+        if not pending or idx >= len(pending["entries"]):
+            return
+
+        entry = pending["entries"][idx]
+
+        await query.edit_message_text(f"🗑 Removing {entry['name']}...")
+
+        try:
+            response = await submit_correction(pending["service"], pending["date"], "remove", row=entry["row"])
+            body_status, body_message = parse_webhook_body(response)
+
+            if response.status_code == 200 and body_status == "success":
+                pending["entries"].pop(idx)
+                # Rows below the deleted one shift up by 1 in the sheet.
+                for e in pending["entries"]:
+                    if e["row"] > entry["row"]:
+                        e["row"] -= 1
+                await query.message.reply_text(f"✅ Removed {entry['name']}.")
+            else:
+                await query.message.reply_text(
+                    f"⚠️ Couldn't remove: {body_message or f'HTTP {response.status_code}'}"
+                )
+        except Exception as e:
+            await query.message.reply_text(f"⚠️ Couldn't reach the webhook.\n\n{e}")
+
+        await send_correction_menu(query.message.reply_text, pending)
+        return
+
+    if action == "coraddmember":
+
+        pending = correction_pending.get(user_id)
+
+        if not pending:
+            return
+
+        pending["awaiting"] = "add_member_name"
+
+        await query.message.reply_text("Type the member's name (as it appears in the roster):")
+        return
+
+    if action.startswith("coraddsrc:"):
+
+        source = action.split(":", 1)[1]
+        pending = correction_pending.get(user_id)
+
+        if not pending or "pending_add" not in pending:
+            return
+
+        member = pending.pop("pending_add")
+        member["source"] = source
+
+        await query.edit_message_text(f"➕ Adding {member['name']}...")
+
+        try:
+            response = await submit_correction(pending["service"], pending["date"], "add", member=member)
+            body_status, body_message = parse_webhook_body(response)
+
+            if response.status_code == 200 and body_status == "success":
+                entries = await fetch_summary(pending["service"], pending["date"])
+                if entries is not None:
+                    pending["entries"] = entries
+                await query.message.reply_text(f"✅ Added {member['name']} ({source}).")
+            else:
+                await query.message.reply_text(
+                    f"⚠️ Couldn't add: {body_message or f'HTTP {response.status_code}'}"
+                )
+        except Exception as e:
+            await query.message.reply_text(f"⚠️ Couldn't reach the webhook.\n\n{e}")
+
+        pending["awaiting"] = "menu"
+        await send_correction_menu(query.message.reply_text, pending)
+        return
+
+    if action == "coraddnewcomer":
+
+        pending = correction_pending.get(user_id)
+
+        if not pending:
+            return
+
+        pending["awaiting"] = "add_newcomer"
+
+        await show_newcomer_picker(query.message.reply_text, pending)
+        return
+
+    if action == "coraddvisitor":
+
+        pending = correction_pending.get(user_id)
+
+        if not pending:
+            return
+
+        pending["awaiting"] = "add_visitor_name"
+
+        await query.message.reply_text("Enter the visitor's name:")
+        return
+
+    if action.startswith("coraddvsrc:"):
+
+        source = action.split(":", 1)[1]
+        pending = correction_pending.get(user_id)
+
+        if not pending:
+            return
+
+        name = pending.pop("pending_visitor_name", None)
+        from_ = pending.pop("pending_visitor_from", None)
+
+        if not (name and from_):
+            return
+
+        member = {"name": name, "department": from_, "type": "Visitor", "source": source}
+
+        await query.edit_message_text(f"➕ Adding visitor {name}...")
+
+        try:
+            response = await submit_correction(pending["service"], pending["date"], "add", member=member)
+            body_status, body_message = parse_webhook_body(response)
+
+            if response.status_code == 200 and body_status == "success":
+                entries = await fetch_summary(pending["service"], pending["date"])
+                if entries is not None:
+                    pending["entries"] = entries
+                await query.message.reply_text(f"✅ Added visitor {name} ({source}).")
+            else:
+                await query.message.reply_text(
+                    f"⚠️ Couldn't add: {body_message or f'HTTP {response.status_code}'}"
+                )
+        except Exception as e:
+            await query.message.reply_text(f"⚠️ Couldn't reach the webhook.\n\n{e}")
+
+        pending["awaiting"] = "menu"
+        await send_correction_menu(query.message.reply_text, pending)
+        return
+
+    if action == "cordone":
+
+        correction_pending.pop(user_id, None)
+        await query.edit_message_text("✅ Done correcting attendance.")
+        return
+
     if user_id not in user_sessions:
 
         await query.edit_message_text(
@@ -2617,16 +3150,19 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif action.startswith("nchurch:"):
 
         church = action.split(":", 1)[1]
+        ctx, ctx_type = get_newcomer_context(user_id)
 
-        session = user_sessions[user_id]
-        names_by_church = session.get("newcomer_names_by_church") or {}
+        if ctx is None:
+            return
+
+        names_by_church = ctx.get("newcomer_names_by_church") or {}
         names = names_by_church.get(church, [])
 
         if not names:
             await query.edit_message_text(f"No names found for {church}.")
             return
 
-        session["newcomer_names"] = names
+        ctx["newcomer_names"] = names
 
         keyboard = [
             [InlineKeyboardButton(name, callback_data=f"nnc:{i}")]
@@ -2644,11 +3180,15 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif action == "nnc_back":
 
-        session = user_sessions[user_id]
-        names_by_church = session.get("newcomer_names_by_church")
+        ctx, ctx_type = get_newcomer_context(user_id)
+
+        if ctx is None:
+            return
+
+        names_by_church = ctx.get("newcomer_names_by_church")
 
         if not names_by_church:
-            await show_newcomer_picker(query.message.reply_text, session)
+            await show_newcomer_picker(query.message.reply_text, ctx)
             return
 
         await query.edit_message_text(
@@ -2661,15 +3201,18 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif action.startswith("nnc:"):
 
         idx = int(action.split(":", 1)[1])
+        ctx, ctx_type = get_newcomer_context(user_id)
 
-        session = user_sessions[user_id]
-        names = session.get("newcomer_names") or []
+        if ctx is None:
+            return
+
+        names = ctx.get("newcomer_names") or []
 
         if idx >= len(names):
             return
 
         name = names[idx]
-        session["newcomer_pending_name"] = name
+        ctx["newcomer_pending_name"] = name
 
         await query.edit_message_text(
             f"Department for \"{name}\"?",
@@ -2717,14 +3260,16 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif action.startswith("ndept:"):
 
         department = action.split(":", 1)[1]
+        ctx, ctx_type = get_newcomer_context(user_id)
 
-        session = user_sessions[user_id]
+        if ctx is None:
+            return
 
-        name = session.get("newcomer_pending_name")
+        name = ctx.get("newcomer_pending_name")
 
         if name:
 
-            session["newcomer_pending_department"] = department
+            ctx["newcomer_pending_department"] = department
 
             await query.edit_message_text(
                 f"Was {name} ({department}) Online or Onsite?",
@@ -2741,22 +3286,27 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif action.startswith("nsrc:"):
 
         source = action.split(":", 1)[1]
+        ctx, ctx_type = get_newcomer_context(user_id)
 
-        session = user_sessions[user_id]
+        if ctx is None:
+            return
 
-        name = session.get("newcomer_pending_name")
-        department = session.get("newcomer_pending_department")
+        name = ctx.get("newcomer_pending_name")
+        department = ctx.get("newcomer_pending_department")
 
-        if name and department:
+        if not (name and department):
+            return
 
-            session["newcomers"].append({
+        ctx["newcomer_pending_name"] = None
+        ctx["newcomer_pending_department"] = None
+
+        if ctx_type == "session":
+
+            ctx["newcomers"].append({
                 "name": name,
                 "department": department,
                 "source": source,
             })
-
-            session["newcomer_pending_name"] = None
-            session["newcomer_pending_department"] = None
 
             await query.edit_message_text(
                 f"✅ Newcomer added: {name} ({department}, {source})"
@@ -2765,6 +3315,31 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.message.reply_text(
                 "Type another newcomer's name, or /done to return to the review."
             )
+
+        else:  # correction flow
+
+            member = {"name": name, "department": department, "type": "Newcomer", "source": source}
+
+            await query.edit_message_text(f"➕ Adding {name}...")
+
+            try:
+                response = await submit_correction(ctx["service"], ctx["date"], "add", member=member)
+                body_status, body_message = parse_webhook_body(response)
+
+                if response.status_code == 200 and body_status == "success":
+                    entries = await fetch_summary(ctx["service"], ctx["date"])
+                    if entries is not None:
+                        ctx["entries"] = entries
+                    await query.message.reply_text(f"✅ Added {name} ({department}, {source}).")
+                else:
+                    await query.message.reply_text(
+                        f"⚠️ Couldn't add: {body_message or f'HTTP {response.status_code}'}"
+                    )
+            except Exception as e:
+                await query.message.reply_text(f"⚠️ Couldn't reach the webhook.\n\n{e}")
+
+            ctx["awaiting"] = "menu"
+            await send_correction_menu(query.message.reply_text, ctx)
 
         return
 
@@ -2918,6 +3493,7 @@ app.add_handler(CommandHandler("friday", friday))
 app.add_handler(CommandHandler("retro", retro))
 app.add_handler(CommandHandler("catchup", catchup))
 app.add_handler(CommandHandler("summary", summary))
+app.add_handler(CommandHandler("correct", correct))
 app.add_handler(CommandHandler("done", done))
 app.add_handler(CommandHandler("skip", skip))
 
