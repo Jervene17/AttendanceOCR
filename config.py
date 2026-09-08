@@ -965,10 +965,7 @@ MEMBERS = {
                     ),
                     "sort_order": 26,
             },
-    # =================================================
-    # CAMPUS FEMALES
-    # =================================================
-
+    
     "CrF027": {
         "display_name": "Divine",
         "official_name": "Divine Hernandez",
@@ -982,6 +979,10 @@ MEMBERS = {
         "sort_order": 27,
     },
 
+    # =================================================
+        # CAMPUS FEMALES
+        # =================================================
+
     "CAMP001": {
         "display_name": "Marinell",
         "official_name": "Marinell Almero",
@@ -992,8 +993,21 @@ MEMBERS = {
         "department": CAMPUS_FEMALES,
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
-        "sort_order": 2,
+        "sort_order": 1,
     },
+
+    "CAMP002": {
+            "display_name": "Glenda",
+            "official_name": "Glenda Leguarda",
+            "aliases": [
+                "Glenda",
+                "Glenda Leguarda",
+            ],
+            "department": CAMPUS_FEMALES,
+            "status": INACTIVE,
+            "attendance": DEFAULT_ATTENDANCE.copy(),
+            "sort_order": 2,
+        },
     # =================================================
     # JS
     # =================================================
