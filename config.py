@@ -969,20 +969,20 @@ MEMBERS = {
     # CAMPUS FEMALES
     # =================================================
 
-    "CAMP001": {
+    "CrF027": {
         "display_name": "Divine",
         "official_name": "Divine Hernandez",
         "aliases": [
             "Divine",
             "Divine Hernandez",
         ],
-        "department": CAMPUS_FEMALES,
+        "department": CAREER_FEMALES,
         "status": ACTIVE,
         "attendance": DEFAULT_ATTENDANCE.copy(),
-        "sort_order": 1,
+        "sort_order": 27,
     },
 
-    "CAMP002": {
+    "CAMP001": {
         "display_name": "Marinell",
         "official_name": "Marinell Almero",
         "aliases": [
