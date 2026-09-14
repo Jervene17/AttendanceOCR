@@ -145,12 +145,13 @@ MEMBER_LISTS = {
         "MCor",
         "Nelissa",
         "P Sae Sol",
+        "Divine",
     ],
 
     "CAMPUS FEMALES": [
-        "Divine",
         "Marinell",
         "Glenda",
+        "Paulyn",
     ],
 
     "JS": [
@@ -1009,6 +1010,18 @@ MEMBERS = {
             "attendance": DEFAULT_ATTENDANCE.copy(),
             "sort_order": 2,
         },
+    "CAMP003": {
+                "display_name": "Paulyn",
+                "official_name": "Paulyn Manuel",
+                "aliases": [
+                    "Paulyn",
+                    "Paulyn Manuel",
+                ],
+                "department": CAMPUS_FEMALES,
+                "status": INACTIVE,
+                "attendance": DEFAULT_ATTENDANCE.copy(),
+                "sort_order": 3,
+            },
     # =================================================
     # JS
     # =================================================
