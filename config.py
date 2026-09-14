@@ -178,6 +178,7 @@ MEMBER_LISTS = {
         "Alma Joy",
         "Andrew Dela Cruz",
         "Riza",
+        "Mitch",
     ],
 
     "Newcomers": [
@@ -1530,7 +1531,7 @@ MEMBERS = {
     },
 
     "OPM009": {
-            "display_name": "Michelle",
+            "display_name": "Mitch",
             "official_name": "Michelle Bautista",
             "aliases": [
                 "Michelle B",
