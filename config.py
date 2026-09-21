@@ -158,10 +158,6 @@ MEMBER_LISTS = {
         "Tita Merlita",
         "Grace - Japan",
         "Emeru",
-        "Michelle",
-        "Edilyn",
-        "Raquel",
-        "Florelyn",
         "Vangie",
         "Almen",
         "Dcns Frances",
@@ -180,6 +176,10 @@ MEMBER_LISTS = {
         "Andrew Dela Cruz",
         "Riza",
         "Mitch",
+        "Michelle",
+        "Edilyn",
+        "Raquel",
+        "Florelyn",
     ],
 
     "Newcomers": [
@@ -1086,69 +1086,69 @@ MEMBERS = {
         "sort_order": 4,
     },
 
-    "JS005": {
+    "OPM010": {
         "display_name": "Michelle",
         "official_name": "Michelle Payumo",
         "aliases": [
             "Michelle P",
             "Michelle Payumo",            
         ],
-        "department": JSF,
+        "department": OPM,
         "status": ACTIVE,
         "attendance": attendance(
             sunday=ONLINE,
             wednesday=ONLINE,
             predawn=ONLINE,
         ),
-        "sort_order": 5,
+        "sort_order": 10,
     },
 
-    "JS006": {
+    "OPM011": {
         "display_name": "Edilyn",
         "official_name": "Edilyn",
         "aliases": [
             "Edilyn",
         ],
-        "department": JSF,
+        "department": OPM,
         "status": ACTIVE,
         "attendance": attendance(
             sunday=ONLINE,
             wednesday=ONLINE,
             predawn=ONLINE,
         ),
-        "sort_order": 6,
+        "sort_order": 11,
     },
 
-    "JS007": {
+    "OPM012": {
         "display_name": "Raquel",
         "official_name": "Raquel",
         "aliases": [
             "Raquel",
         ],
-        "department": JSF,
+        "department": OPM,
         "status": ACTIVE,
         "attendance": attendance(
             sunday=ONLINE,
             wednesday=ONLINE,
             predawn=ONLINE,
         ),
-        "sort_order": 7,
+        "sort_order": 12,
     },
 
-    "JS008": {
+    "OPM013": {
         "display_name": "Florelyn",
         "official_name": "Florelyn",
         "aliases": [
             "Florelyn",
         ],
-        "department": JSF,
+        "department": OPM,
         "status": ACTIVE,
         "attendance": attendance(
             sunday=ONLINE,
             wednesday=ONLINE,
             predawn=ONLINE,
         ),
-        "sort_order": 8,
+        "sort_order": 13,
     },
 
     "JS009": {
