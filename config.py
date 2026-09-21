@@ -1086,72 +1086,7 @@ MEMBERS = {
         "sort_order": 4,
     },
 
-    "OPM010": {
-        "display_name": "Michelle",
-        "official_name": "Michelle Payumo",
-        "aliases": [
-            "Michelle P",
-            "Michelle Payumo",            
-        ],
-        "department": OPM,
-        "status": ACTIVE,
-        "attendance": attendance(
-            sunday=ONLINE,
-            wednesday=ONLINE,
-            predawn=ONLINE,
-        ),
-        "sort_order": 10,
-    },
-
-    "OPM011": {
-        "display_name": "Edilyn",
-        "official_name": "Edilyn",
-        "aliases": [
-            "Edilyn",
-        ],
-        "department": OPM,
-        "status": ACTIVE,
-        "attendance": attendance(
-            sunday=ONLINE,
-            wednesday=ONLINE,
-            predawn=ONLINE,
-        ),
-        "sort_order": 11,
-    },
-
-    "OPM012": {
-        "display_name": "Raquel",
-        "official_name": "Raquel",
-        "aliases": [
-            "Raquel",
-        ],
-        "department": OPM,
-        "status": ACTIVE,
-        "attendance": attendance(
-            sunday=ONLINE,
-            wednesday=ONLINE,
-            predawn=ONLINE,
-        ),
-        "sort_order": 12,
-    },
-
-    "OPM013": {
-        "display_name": "Florelyn",
-        "official_name": "Florelyn",
-        "aliases": [
-            "Florelyn",
-        ],
-        "department": OPM,
-        "status": ACTIVE,
-        "attendance": attendance(
-            sunday=ONLINE,
-            wednesday=ONLINE,
-            predawn=ONLINE,
-        ),
-        "sort_order": 13,
-    },
-
-    "JS009": {
+    "JS005": {
             "display_name": "Vangie",
             "official_name": "Vangie Dolom",
             "aliases": [
@@ -1166,7 +1101,7 @@ MEMBERS = {
             "sort_order": 9,
         },
 
-    "JS010": {
+    "JS006": {
             "display_name": "Dcns Frances",
             "official_name": "Frances Ann Canillas",
             "aliases": [
@@ -1181,7 +1116,7 @@ MEMBERS = {
             "sort_order": 10,
         },
 
-    "JS011": {
+    "JS007": {
             "display_name": "Hannah",
             "official_name": "Hannah Zotomayor",
             "aliases": [
@@ -1560,6 +1495,70 @@ MEMBERS = {
             ),
             "sort_order": 9,
     },
+    "OPM010": {
+            "display_name": "Michelle",
+            "official_name": "Michelle Payumo",
+            "aliases": [
+                "Michelle P",
+                "Michelle Payumo",            
+            ],
+            "department": OPM,
+            "status": ACTIVE,
+            "attendance": attendance(
+                sunday=ONLINE,
+                wednesday=ONLINE,
+                predawn=ONLINE,
+            ),
+            "sort_order": 10,
+        },
+    
+        "OPM011": {
+            "display_name": "Edilyn",
+            "official_name": "Edilyn",
+            "aliases": [
+                "Edilyn",
+            ],
+            "department": OPM,
+            "status": ACTIVE,
+            "attendance": attendance(
+                sunday=ONLINE,
+                wednesday=ONLINE,
+                predawn=ONLINE,
+            ),
+            "sort_order": 11,
+        },
+    
+        "OPM012": {
+            "display_name": "Raquel",
+            "official_name": "Raquel",
+            "aliases": [
+                "Raquel",
+            ],
+            "department": OPM,
+            "status": ACTIVE,
+            "attendance": attendance(
+                sunday=ONLINE,
+                wednesday=ONLINE,
+                predawn=ONLINE,
+            ),
+            "sort_order": 12,
+        },
+    
+        "OPM013": {
+            "display_name": "Florelyn",
+            "official_name": "Florelyn",
+            "aliases": [
+                "Florelyn",
+            ],
+            "department": OPM,
+            "status": ACTIVE,
+            "attendance": attendance(
+                sunday=ONLINE,
+                wednesday=ONLINE,
+                predawn=ONLINE,
+            ),
+            "sort_order": 13,
+        },
     # =================================================
     # LORD'S LOVE CHURCH
     # =================================================
