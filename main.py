@@ -3953,14 +3953,42 @@ async def portal_attendance_check(telegram_id, sermon):
     linked_member = MEMBERS.get(link["member_id"])
     if not linked_member:
         return False
-    linked_name = normalize_name(linked_member.get("display_name", link["member_name"]))
+    linked_names = {
+        normalize_name(name)
+        for name in [
+            linked_member.get("display_name"),
+            linked_member.get("official_name"),
+            *(linked_member.get("aliases") or []),
+            link["member_name"],
+        ]
+        if name
+    }
     linked_department = normalize_name(linked_member.get("department", ""))
+    linked_departments = {linked_department}
+
+    # Attendance summary groups can use short labels (for example,
+    # BLESSEDF) while the master roster stores the full department
+    # name (BLESSED FEMALES). Accept the summary bucket that contains
+    # this roster member and belongs to the same canonical department.
+    linked_display_name = normalize_name(linked_member.get("display_name", ""))
+    for department_label, display_names in MEMBER_LISTS.items():
+        bucket_names = {normalize_name(name) for name in display_names}
+        if linked_display_name not in bucket_names:
+            continue
+        same_department = any(
+            normalize_name(member.get("department", "")) == linked_department
+            and normalize_name(member.get("display_name", "")) in bucket_names
+            for member in MEMBERS.values()
+        )
+        if same_department:
+            linked_departments.add(normalize_name(department_label))
+
     for entry in entries:
         if not isinstance(entry, dict):
             continue
         if (
-            normalize_name(entry.get("name", "")) == linked_name
-            and normalize_name(entry.get("department", "")) == linked_department
+            normalize_name(entry.get("name", "")) in linked_names
+            and normalize_name(entry.get("department", "")) in linked_departments
         ):
             return True
     return False
