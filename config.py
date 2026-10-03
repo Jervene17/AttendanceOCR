@@ -1315,20 +1315,6 @@ MEMBERS = {
                 "sort_order": 1,
     },
 
-    "CAMP003": {
-                "display_name": "Glenda",
-                "official_name": "Glenda Leguarda",
-                "aliases": [
-                    "Glenda",
-                    "Glenda Leguarda",
-                ],
-                "department": CAMPUS_FEMALES,
-                "status": ACTIVE,
-                "attendance": DEFAULT_ATTENDANCE.copy(),
-                "sort_order": 3,
-    },
-        
-
     # =================================================
     # OVERSEAS FILIPINO MEMBERS
     # =================================================

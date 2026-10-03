@@ -16,6 +16,7 @@ __pycache__/
 # Local files
 user_chats.json
 temp/
+data/
 
 # Archive
 archive/

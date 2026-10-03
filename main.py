@@ -20,6 +20,7 @@ from telegram import (
     Update,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
+    WebAppInfo,
 )
 
 from telegram.ext import (
@@ -46,15 +47,37 @@ from members import (
     DISPLAY_NAME_TO_MEMBER,
     find_member,
 )
+from cleaner import normalize_name
+import sermon_portal
 
 # Load environment variables
 load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+PUBLIC_BASE_URL = (os.getenv("PUBLIC_BASE_URL") or "").rstrip("/")
 
-print(BOT_TOKEN)
-print(WEBHOOK_URL)
+print("Bot token configured:", bool(BOT_TOKEN))
+print("Attendance webhook configured:", bool(WEBHOOK_URL))
+
+
+def parse_id_allowlist(variable_name, fallback_ids):
+    """Read a comma-separated Telegram ID allowlist from the environment."""
+    configured = os.getenv(variable_name, "").strip()
+    if not configured:
+        return set(fallback_ids)
+    try:
+        return {int(value.strip()) for value in configured.split(",") if value.strip()}
+    except ValueError as exc:
+        raise RuntimeError(
+            f"{variable_name} must be a comma-separated list of Telegram numeric IDs."
+        ) from exc
+
+
+# Attendance controls and sermon administration are separate roles.
+# If omitted, each setting preserves the current organizer allowlist.
+ATTENDANCE_LOGGER_IDS = parse_id_allowlist("ATTENDANCE_LOGGER_IDS", ORGANIZER_IDS)
+SERMON_ADMIN_IDS = parse_id_allowlist("SERMON_ADMIN_IDS", ORGANIZER_IDS)
 
 
 user_sessions = {}
@@ -129,6 +152,12 @@ summary_pending = {}
 # }
 correction_pending = {}
 
+# Message-library registration and organizer PDF upload flows.
+signup_waiting = set()
+sermon_upload_waiting = set()
+portal_attendance_cache = {}
+portal_attendance_lock = asyncio.Lock()
+
 # How many logged entries are shown per page in the Correct
 # Attendance menu -- keeps the inline keyboard well under Telegram's
 # button limit even for a service/date with 50+ entries.
@@ -159,12 +188,14 @@ DEPARTMENT_COLORS = ["🔴", "🟠", "🟡", "🟢", "🔵", "🟣", "🟤"]
 
 def is_organizer(user_id):
     """
-    Attendance recording — for every service, including Sunday —
-    is limited to the organizer allowlist (config.py: ORGANIZER_IDS).
-    There is no longer a separate per-department checker role; the
-    2 organizers handle both online and onsite entry themselves.
+    Attendance recording and attendance-management commands are
+    limited to ATTENDANCE_LOGGER_IDS (Railway environment variable).
     """
-    return user_id in ORGANIZER_IDS
+    return user_id in ATTENDANCE_LOGGER_IDS
+
+
+def is_sermon_admin(user_id):
+    return user_id in SERMON_ADMIN_IDS
 
 
 async def require_organizer(reply_func, user_id):
@@ -178,6 +209,13 @@ async def require_organizer(reply_func, user_id):
     await reply_func(
         "🚫 Attendance recording is limited to organizers."
     )
+    return False
+
+
+async def require_sermon_admin(reply_func, user_id):
+    if is_sermon_admin(user_id):
+        return True
+    await reply_func("🚫 Sermon uploads and message-access approvals are limited to sermon administrators.")
     return False
 
 
@@ -300,6 +338,15 @@ async def send_service_menu(message, user_id):
         [InlineKeyboardButton("✏️ Correct Attendance", callback_data="correct_menu")]
     )
 
+    keyboard.append(
+        [InlineKeyboardButton("📚 Sermon messages", web_app=WebAppInfo(url=f"{PUBLIC_BASE_URL}/app"))]
+        if PUBLIC_BASE_URL else
+        [InlineKeyboardButton("📚 Sermon messages", callback_data="message_portal_unconfigured")]
+    )
+    keyboard.append(
+        [InlineKeyboardButton("🔗 Sign up for message access through Telegram", callback_data="message_signup")]
+    )
+
     await message.reply_text(
         "Attendance Bot V2 is ready.\n\n"
         "Select a service:",
@@ -310,6 +357,14 @@ async def send_service_menu(message, user_id):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user_id = update.effective_user.id
+
+    if update.effective_chat.type != "private":
+        await update.message.reply_text("Please open a private chat with the bot to sign up or read messages.")
+        return
+
+    if not is_organizer(user_id):
+        await send_member_menu(update.message, user_id)
+        return
 
     if not await require_organizer(update.message.reply_text, user_id):
         return
@@ -322,6 +377,102 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     correction_pending.pop(user_id, None)
 
     await send_service_menu(update.message, user_id)
+
+
+async def send_member_menu(message, user_id):
+    link = sermon_portal.get_link_for_user(user_id)
+    if link and link["status"] == "approved":
+        account_status = f"Linked as {link['member_name']}."
+    elif link and link["status"] == "pending":
+        account_status = f"Your request to link as {link['member_name']} is waiting for an organizer."
+    else:
+        account_status = "Link your Telegram account once; an organizer will confirm the roster match."
+
+    keyboard = [[InlineKeyboardButton(
+        "🔗 Sign up for message access through Telegram", callback_data="message_signup"
+    )]]
+    if PUBLIC_BASE_URL:
+        keyboard.append([InlineKeyboardButton(
+            "📚 Open sermon messages", web_app=WebAppInfo(url=f"{PUBLIC_BASE_URL}/app")
+        )])
+
+    text = f"Sermon message access\n\n{account_status}"
+    if not PUBLIC_BASE_URL:
+        text += "\n\nThe reading library will appear here after its secure web address is configured."
+    await message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
+
+
+async def service_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if not await require_organizer(update.message.reply_text, user_id):
+        return
+    if update.effective_chat.type != "private":
+        await update.message.reply_text("Please use /service in a private chat with the bot.")
+        return
+    await send_service_menu(update.message, user_id)
+
+
+async def signup(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_chat.type != "private":
+        await update.message.reply_text("Please message me privately to sign up.")
+        return
+    user_id = update.effective_user.id
+    existing = sermon_portal.get_link_for_user(user_id)
+    if existing and existing["status"] == "approved":
+        await update.message.reply_text(f"Your account is already linked as {existing['member_name']}.")
+        return
+    if existing and existing["status"] == "pending":
+        await update.message.reply_text(f"Your request for {existing['member_name']} is waiting for organizer approval.")
+        return
+    signup_waiting.add(user_id)
+    await update.message.reply_text(
+        "Sign up for message access through Telegram\n\n"
+        "Type your exact roster name. An organizer will confirm the match before access is enabled."
+    )
+
+
+async def upload_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if not await require_sermon_admin(update.message.reply_text, user_id):
+        return
+    if update.effective_chat.type != "private":
+        await update.message.reply_text("Please upload sermon PDFs in a private chat with the bot.")
+        return
+    sermon_upload_waiting.add(user_id)
+    await update.message.reply_text(
+        "Upload the sermon PDF as a document. Put this in its caption:\n"
+        "Sunday | YYYY-MM-DD | Sermon title\n"
+        "or\n"
+        "Wednesday | YYYY-MM-DD | Sermon title\n\n"
+        "The library needs an unlocked PDF so readers do not get a password prompt. "
+        "Open the protected source with its current password and save an unlocked copy before uploading."
+    )
+
+
+async def message_access(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if not await require_sermon_admin(update.message.reply_text, user_id):
+        return
+    if update.effective_chat.type != "private":
+        await update.message.reply_text("Please review sign-ups in a private chat with the bot.")
+        return
+    requests_to_review = sermon_portal.pending_link_requests()
+    if not requests_to_review:
+        await update.message.reply_text("There are no message-access sign-ups waiting for approval.")
+        return
+    await update.message.reply_text(
+        f"Message-access sign-ups waiting for review: {len(requests_to_review)}"
+    )
+    for request in requests_to_review:
+        keyboard = [[
+            InlineKeyboardButton("✅ Approve", callback_data=f"msgacc:a:{request['telegram_id']}"),
+            InlineKeyboardButton("❌ Deny", callback_data=f"msgacc:d:{request['telegram_id']}"),
+        ]]
+        await update.message.reply_text(
+            f"Requested roster name: {request['member_name']}\n"
+            f"Telegram account ID: {request['telegram_id']}",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+        )
 
 
 async def retro(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -481,6 +632,76 @@ async def receive_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Not currently expecting a screenshot.")
 
 
+async def receive_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    document = update.message.document
+    if user_id not in sermon_upload_waiting:
+        if is_organizer(user_id):
+            await update.message.reply_text("Use /upload_message before uploading a sermon PDF.")
+        return
+    if update.effective_chat.type != "private":
+        await update.message.reply_text("Please upload the sermon PDF in a private chat with the bot.")
+        return
+    file_name = (document.file_name or "").lower()
+    mime_type = (document.mime_type or "").lower()
+    if not file_name.endswith(".pdf") and mime_type != "application/pdf":
+        await update.message.reply_text("Please upload a PDF document.")
+        return
+    if document.file_size and document.file_size > sermon_portal.MAX_PDF_BYTES:
+        await update.message.reply_text("This file is over the 10 MB limit.")
+        return
+    parts = [part.strip() for part in (update.message.caption or "").split("|", 2)]
+    if len(parts) != 3:
+        await update.message.reply_text(
+            "Add this caption and resend the PDF:\nSunday | YYYY-MM-DD | Sermon title\n"
+            "or Wednesday | YYYY-MM-DD | Sermon title"
+        )
+        return
+    service, service_date, title = parts
+    if service.title() not in ("Sunday", "Wednesday"):
+        await update.message.reply_text("Service must be Sunday or Wednesday.")
+        return
+    try:
+        datetime.strptime(service_date, "%Y-%m-%d")
+    except ValueError:
+        await update.message.reply_text("Use a service date in YYYY-MM-DD format.")
+        return
+
+    sermon_portal.initialize_storage()
+    temporary = sermon_portal.store_directory() / f"upload-{uuid.uuid4().hex}.pdf"
+    try:
+        telegram_file = await document.get_file()
+        await telegram_file.download_to_drive(custom_path=str(temporary))
+        with temporary.open("rb") as stream:
+            if stream.read(5) != b"%PDF-":
+                raise ValueError("The uploaded file does not look like a valid PDF.")
+        try:
+            from pypdf import PdfReader
+            reader = PdfReader(str(temporary), strict=False)
+            if reader.is_encrypted:
+                raise ValueError(
+                    "This PDF is password-protected. Open the original using its current password, "
+                    "save an unlocked copy, then upload that copy so members will not see a password prompt."
+                )
+        except ImportError:
+            raise RuntimeError("PDF validation is unavailable; install the pypdf dependency and redeploy.")
+        sermon = sermon_portal.save_sermon(
+            temporary, service, service_date, title, uploaded_by=user_id
+        )
+        sermon_upload_waiting.discard(user_id)
+        await update.message.reply_text(
+            f"✅ Saved {sermon['service']} message for {sermon['service_date']}: {sermon['title']}\n"
+            "Members who attended that service can read it from the sermon library."
+        )
+    except ValueError as exc:
+        temporary.unlink(missing_ok=True)
+        await update.message.reply_text(f"Could not save this sermon: {exc}")
+    except Exception as exc:
+        temporary.unlink(missing_ok=True)
+        print("Sermon upload error:", type(exc).__name__)
+        await update.message.reply_text("Could not save the sermon PDF. Please check the file and try again.")
+
+
 async def receive_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user_id = update.effective_user.id
@@ -488,6 +709,44 @@ async def receive_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
 
     if not text:
+        return
+
+    # New member registration is handled before the attendance text flows.
+    if user_id in signup_waiting:
+        signup_waiting.discard(user_id)
+        requested = normalize_name(text)
+        matches = {}
+        for member_id, member in MEMBERS.items():
+            names = [member.get("display_name"), member.get("official_name")]
+            names.extend(member.get("aliases", []))
+            if any(normalize_name(name) == requested for name in names if name):
+                matches[member_id] = member
+        if len(matches) != 1:
+            await update.message.reply_text(
+                "I couldn't identify one unique roster entry from that name. "
+                "Please run /signup again and type your full roster name."
+            )
+            return
+        member_id, member = next(iter(matches.items()))
+        member_name = member.get("display_name") or member.get("official_name")
+        result, stored_name = sermon_portal.submit_link_request(user_id, member_id, member_name)
+        if result == "already_approved":
+            await update.message.reply_text(f"Your Telegram account is already linked as {stored_name}.")
+            return
+        if result == "already_pending":
+            await update.message.reply_text(f"Your request for {stored_name} is already waiting for approval.")
+            return
+        await update.message.reply_text(
+            f"Sign-up request submitted for {member_name}. An organizer must approve it before you can read messages."
+        )
+        for organizer_id in SERMON_ADMIN_IDS:
+            try:
+                await context.bot.send_message(
+                    chat_id=organizer_id,
+                    text=f"New message-access sign-up: {member_name} (Telegram account {user_id}). Review with /message_access.",
+                )
+            except Exception as exc:
+                print("Could not notify message-access organizer:", type(exc).__name__)
         return
 
     # User previously tapped "Special Service/Event" and is now
@@ -2371,11 +2630,59 @@ async def submit_attendance(session):
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     query = update.callback_query
-    await query.answer()
-
     user_id = query.from_user.id
 
     action = query.data
+
+    if action == "message_portal_unconfigured":
+        await query.answer(
+            "The sermon library address has not been configured yet.", show_alert=True
+        )
+        return
+    await query.answer()
+
+    if action == "message_signup":
+        signup_waiting.add(user_id)
+        await query.edit_message_text(
+            "Sign up for message access through Telegram\n\n"
+            "Type your exact roster name. An organizer will confirm the match before access is enabled."
+        )
+        return
+
+    if action.startswith("msgacc:"):
+        if not is_sermon_admin(user_id):
+            await query.answer("Only sermon administrators can review sign-ups.", show_alert=True)
+            return
+        _, decision, requested_id = action.split(":", 2)
+        requested_id = int(requested_id)
+        if decision == "a":
+            request, error = sermon_portal.approve_link_request(requested_id, user_id)
+            if error:
+                await query.edit_message_text(f"Could not approve: {error}")
+                return
+            await query.edit_message_text(f"✅ Linked {request['member_name']} to the approved Telegram account.")
+            try:
+                await context.bot.send_message(
+                    chat_id=requested_id,
+                    text=f"✅ Your message-access sign-up as {request['member_name']} was approved. Open /start to read eligible sermons.",
+                )
+            except Exception as exc:
+                print("Could not send message-access approval:", type(exc).__name__)
+        else:
+            request = sermon_portal.deny_link_request(requested_id)
+            await query.edit_message_text(
+                f"Sign-up denied for {request['member_name']}." if request
+                else "This request is no longer pending."
+            )
+            if request:
+                try:
+                    await context.bot.send_message(
+                        chat_id=requested_id,
+                        text="Your message-access sign-up was not approved. Please contact an organizer if you think this was a mistake.",
+                    )
+                except Exception as exc:
+                    print("Could not send message-access denial:", type(exc).__name__)
+        return
 
     if not is_organizer(user_id):
         await query.edit_message_text(
@@ -3471,8 +3778,70 @@ async def skip(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Nothing to skip right now.")
 
 async def debug_any(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("UPDATE RECEIVED")
-    print(update)
+    # Keep request content, names, and Telegram IDs out of Railway logs.
+    update_type = "callback" if update.callback_query else "message" if update.message else "other"
+    print("Telegram update received:", update_type)
+
+
+async def portal_attendance_check(telegram_id, sermon):
+    """Check the live attendance sheet for this linked member and service."""
+    link = sermon_portal.get_member_link(telegram_id)
+    if not link:
+        return False
+    cache_key = (sermon["service"], sermon["service_date"])
+    cached = portal_attendance_cache.get(cache_key)
+    if cached and cached[0] > asyncio.get_running_loop().time():
+        entries = cached[1]
+    else:
+        async with portal_attendance_lock:
+            cached = portal_attendance_cache.get(cache_key)
+            if cached and cached[0] > asyncio.get_running_loop().time():
+                entries = cached[1]
+            else:
+                entries = await fetch_summary(*cache_key)
+                if entries is None:
+                    raise RuntimeError("Attendance summary could not be read from the webhook.")
+                portal_attendance_cache[cache_key] = (
+                    asyncio.get_running_loop().time() + 300, entries
+                )
+    linked_member = MEMBERS.get(link["member_id"])
+    if not linked_member:
+        return False
+    linked_name = normalize_name(linked_member.get("display_name", link["member_name"]))
+    linked_department = normalize_name(linked_member.get("department", ""))
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        if (
+            normalize_name(entry.get("name", "")) == linked_name
+            and normalize_name(entry.get("department", "")) == linked_department
+        ):
+            return True
+    return False
+
+
+async def start_sermon_portal(application):
+    sermon_portal.initialize_storage()
+    if not PUBLIC_BASE_URL:
+        print("Sermon reader is disabled until PUBLIC_BASE_URL is configured.")
+        return
+    if not PUBLIC_BASE_URL.startswith("https://"):
+        raise RuntimeError("PUBLIC_BASE_URL must use HTTPS for Telegram Mini App authentication.")
+    from aiohttp import web
+    sermon_portal.set_attendance_checker(portal_attendance_check)
+    runner = web.AppRunner(sermon_portal.create_web_app(BOT_TOKEN, portal_attendance_check))
+    await runner.setup()
+    port = int(os.getenv("PORT", "8080"))
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+    application.bot_data["sermon_portal_runner"] = runner
+    print("Sermon reader web endpoint started on port", port)
+
+
+async def stop_sermon_portal(application):
+    runner = application.bot_data.pop("sermon_portal_runner", None)
+    if runner:
+        await runner.cleanup()
 
 
 async def error_handler(update, context):
@@ -3481,11 +3850,17 @@ async def error_handler(update, context):
     traceback.print_exception(type(context.error), context.error, context.error.__traceback__)
 
 
-print("=== BUILD 5 ===")
-app = ApplicationBuilder().token(BOT_TOKEN).build()
+print("=== BUILD 6 ===")
+app = (ApplicationBuilder().token(BOT_TOKEN)
+       .post_init(start_sermon_portal)
+       .post_shutdown(stop_sermon_portal)
+       .build())
 
 app.add_handler(CommandHandler("start", start))
-app.add_handler(CommandHandler("service", start))  # alias to bring up the menu again mid-conversation
+app.add_handler(CommandHandler("service", service_menu))
+app.add_handler(CommandHandler("signup", signup))
+app.add_handler(CommandHandler("upload_message", upload_message))
+app.add_handler(CommandHandler("message_access", message_access))
 app.add_handler(CommandHandler("predawn", predawn))
 app.add_handler(CommandHandler("sunday", sunday))
 app.add_handler(CommandHandler("wednesday", wednesday))
@@ -3510,6 +3885,10 @@ app.add_handler(
         filters.PHOTO | filters.Document.IMAGE,
         receive_photo,
     )
+)
+
+app.add_handler(
+    MessageHandler(filters.Document.ALL, receive_document)
 )
 app.add_handler(
     MessageHandler(
