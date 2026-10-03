@@ -347,6 +347,9 @@ async def send_service_menu(message, user_id):
         [InlineKeyboardButton("🔗 Sign up for message access through Telegram", callback_data="message_signup")]
     )
 
+    if is_sermon_admin(user_id):
+        keyboard.extend(sermon_admin_buttons())
+
     await message.reply_text(
         "Attendance Bot V2 is ready.\n\n"
         "Select a service:",
@@ -395,11 +398,21 @@ async def send_member_menu(message, user_id):
         keyboard.append([InlineKeyboardButton(
             "📚 Open sermon messages", web_app=WebAppInfo(url=f"{PUBLIC_BASE_URL}/app")
         )])
+    if is_sermon_admin(user_id):
+        keyboard.extend(sermon_admin_buttons())
 
     text = f"Sermon message access\n\n{account_status}"
     if not PUBLIC_BASE_URL:
         text += "\n\nThe reading library will appear here after its secure web address is configured."
     await message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
+
+
+def sermon_admin_buttons():
+    """Buttons shown only to users in SERMON_ADMIN_IDS."""
+    return [
+        [InlineKeyboardButton("📤 Upload sermon PDF", callback_data="sermon:upload")],
+        [InlineKeyboardButton("👥 Review message sign-ups", callback_data="sermon:signups")],
+    ]
 
 
 async def service_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -438,8 +451,12 @@ async def upload_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type != "private":
         await update.message.reply_text("Please upload sermon PDFs in a private chat with the bot.")
         return
+    await begin_sermon_upload(update.message.reply_text, user_id)
+
+
+async def begin_sermon_upload(reply_text, user_id):
     sermon_upload_waiting.add(user_id)
-    await update.message.reply_text(
+    await reply_text(
         "Upload the sermon PDF as a document. Put this in its caption:\n"
         "Sunday | YYYY-MM-DD | Sermon title\n"
         "or\n"
@@ -456,11 +473,15 @@ async def message_access(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type != "private":
         await update.message.reply_text("Please review sign-ups in a private chat with the bot.")
         return
+    await send_pending_link_requests(update.message.reply_text)
+
+
+async def send_pending_link_requests(reply_text):
     requests_to_review = sermon_portal.pending_link_requests()
     if not requests_to_review:
-        await update.message.reply_text("There are no message-access sign-ups waiting for approval.")
+        await reply_text("There are no message-access sign-ups waiting for approval.")
         return
-    await update.message.reply_text(
+    await reply_text(
         f"Message-access sign-ups waiting for review: {len(requests_to_review)}"
     )
     for request in requests_to_review:
@@ -468,7 +489,7 @@ async def message_access(update: Update, context: ContextTypes.DEFAULT_TYPE):
             InlineKeyboardButton("✅ Approve", callback_data=f"msgacc:a:{request['telegram_id']}"),
             InlineKeyboardButton("❌ Deny", callback_data=f"msgacc:d:{request['telegram_id']}"),
         ]]
-        await update.message.reply_text(
+        await reply_text(
             f"Requested roster name: {request['member_name']}\n"
             f"Telegram account ID: {request['telegram_id']}",
             reply_markup=InlineKeyboardMarkup(keyboard),
@@ -2647,6 +2668,26 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Sign up for message access through Telegram\n\n"
             "Type your exact roster name. An organizer will confirm the match before access is enabled."
         )
+        return
+
+    if action == "sermon:upload":
+        if not is_sermon_admin(user_id):
+            await query.message.reply_text("🚫 Sermon uploads are limited to sermon administrators.")
+            return
+        if query.message.chat.type != "private":
+            await query.message.reply_text("Please upload sermon PDFs in a private chat with the bot.")
+            return
+        await begin_sermon_upload(query.message.reply_text, user_id)
+        return
+
+    if action == "sermon:signups":
+        if not is_sermon_admin(user_id):
+            await query.message.reply_text("🚫 Signup approvals are limited to sermon administrators.")
+            return
+        if query.message.chat.type != "private":
+            await query.message.reply_text("Please review sign-ups in a private chat with the bot.")
+            return
+        await send_pending_link_requests(query.message.reply_text)
         return
 
     if action.startswith("msgacc:"):
