@@ -155,6 +155,7 @@ correction_pending = {}
 # Message-library registration and organizer PDF upload flows.
 signup_waiting = set()
 sermon_upload_waiting = set()
+roster_match_waiting = {}
 portal_attendance_cache = {}
 portal_attendance_lock = asyncio.Lock()
 
@@ -440,7 +441,7 @@ async def signup(update: Update, context: ContextTypes.DEFAULT_TYPE):
     signup_waiting.add(user_id)
     await update.message.reply_text(
         "Sign up for message access through Telegram\n\n"
-        "Type your exact roster name. An organizer will confirm the match before access is enabled."
+        "Type the name you use. If it does not match the roster exactly, an organizer will match it before approving access."
     )
 
 
@@ -458,9 +459,9 @@ async def begin_sermon_upload(reply_text, user_id):
     sermon_upload_waiting.add(user_id)
     await reply_text(
         "Upload the sermon PDF as a document. Put this in its caption:\n"
-        "Sunday | YYYY-MM-DD | Sermon title\n"
+        "Sunday | YYYY-MM-DD\n"
         "or\n"
-        "Wednesday | YYYY-MM-DD | Sermon title\n\n"
+        "Wednesday | YYYY-MM-DD\n\n"
         "The library needs an unlocked PDF so readers do not get a password prompt. "
         "Open the protected source with its current password and save an unlocked copy before uploading."
     )
@@ -485,12 +486,20 @@ async def send_pending_link_requests(reply_text):
         f"Message-access sign-ups waiting for review: {len(requests_to_review)}"
     )
     for request in requests_to_review:
-        keyboard = [[
-            InlineKeyboardButton("✅ Approve", callback_data=f"msgacc:a:{request['telegram_id']}"),
-            InlineKeyboardButton("❌ Deny", callback_data=f"msgacc:d:{request['telegram_id']}"),
-        ]]
+        if request["member_id"] == sermon_portal.UNMATCHED_MEMBER_ID:
+            keyboard = [[
+                InlineKeyboardButton("🔎 Match to roster", callback_data=f"msgacc:match:{request['telegram_id']}"),
+                InlineKeyboardButton("❌ Deny", callback_data=f"msgacc:d:{request['telegram_id']}"),
+            ]]
+            request_note = "Name needs manual roster matching"
+        else:
+            keyboard = [[
+                InlineKeyboardButton("✅ Approve", callback_data=f"msgacc:a:{request['telegram_id']}"),
+                InlineKeyboardButton("❌ Deny", callback_data=f"msgacc:d:{request['telegram_id']}"),
+            ]]
+            request_note = "Matched roster entry"
         await reply_text(
-            f"Requested roster name: {request['member_name']}\n"
+            f"{request_note}: {request['member_name']}\n"
             f"Telegram account ID: {request['telegram_id']}",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
@@ -671,14 +680,14 @@ async def receive_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if document.file_size and document.file_size > sermon_portal.MAX_PDF_BYTES:
         await update.message.reply_text("This file is over the 10 MB limit.")
         return
-    parts = [part.strip() for part in (update.message.caption or "").split("|", 2)]
-    if len(parts) != 3:
+    parts = [part.strip() for part in (update.message.caption or "").split("|", 1)]
+    if len(parts) != 2:
         await update.message.reply_text(
-            "Add this caption and resend the PDF:\nSunday | YYYY-MM-DD | Sermon title\n"
-            "or Wednesday | YYYY-MM-DD | Sermon title"
+            "Add this caption and resend the PDF:\nSunday | YYYY-MM-DD\n"
+            "or Wednesday | YYYY-MM-DD"
         )
         return
-    service, service_date, title = parts
+    service, service_date = parts
     if service.title() not in ("Sunday", "Wednesday"):
         await update.message.reply_text("Service must be Sunday or Wednesday.")
         return
@@ -687,6 +696,7 @@ async def receive_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except ValueError:
         await update.message.reply_text("Use a service date in YYYY-MM-DD format.")
         return
+    title = f"{service.title()} Message"
 
     sermon_portal.initialize_storage()
     temporary = sermon_portal.store_directory() / f"upload-{uuid.uuid4().hex}.pdf"
@@ -711,7 +721,7 @@ async def receive_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         sermon_upload_waiting.discard(user_id)
         await update.message.reply_text(
-            f"✅ Saved {sermon['service']} message for {sermon['service_date']}: {sermon['title']}\n"
+            f"✅ Saved {sermon['service']} message for {sermon['service_date']}.\n"
             "Members who attended that service can read it from the sermon library."
         )
     except ValueError as exc:
@@ -732,6 +742,52 @@ async def receive_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not text:
         return
 
+    # An administrator can search the roster after opening an unmatched signup.
+    if user_id in roster_match_waiting:
+        if not is_sermon_admin(user_id):
+            roster_match_waiting.pop(user_id, None)
+            await update.message.reply_text("Roster matching is limited to sermon administrators.")
+            return
+        requested_id = roster_match_waiting.pop(user_id)
+        search = normalize_name(text)
+        if not search:
+            await update.message.reply_text("Type part of a roster name to search.")
+            roster_match_waiting[user_id] = requested_id
+            return
+        candidates = []
+        for member_id, member in MEMBERS.items():
+            names = [member.get("display_name"), member.get("official_name")]
+            names.extend(member.get("aliases", []))
+            normalized_names = [normalize_name(name) for name in names if name]
+            if any(search in name for name in normalized_names):
+                display_name = member.get("display_name") or member.get("official_name") or member_id
+                candidates.append((member_id, display_name, member))
+        if not candidates:
+            await update.message.reply_text(
+                "No roster names matched that search. Tap Match to roster again and try another name."
+            )
+            return
+        if len(candidates) > 20:
+            await update.message.reply_text(
+                f"That search matched {len(candidates)} roster entries. Type a more specific name."
+            )
+            roster_match_waiting[user_id] = requested_id
+            return
+        buttons = []
+        for member_id, display_name, member in candidates:
+            department = member.get("department", "")
+            label = f"{display_name} · {member_id}"
+            if department:
+                label += f" · {department}"
+            buttons.append([InlineKeyboardButton(
+                label[:64], callback_data=f"msgacc:link:{requested_id}:{member_id}"
+            )])
+        await update.message.reply_text(
+            f"Choose the roster entry for Telegram account {requested_id}:",
+            reply_markup=InlineKeyboardMarkup(buttons),
+        )
+        return
+
     # New member registration is handled before the attendance text flows.
     if user_id in signup_waiting:
         signup_waiting.discard(user_id)
@@ -742,14 +798,16 @@ async def receive_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             names.extend(member.get("aliases", []))
             if any(normalize_name(name) == requested for name in names if name):
                 matches[member_id] = member
-        if len(matches) != 1:
-            await update.message.reply_text(
-                "I couldn't identify one unique roster entry from that name. "
-                "Please run /signup again and type your full roster name."
-            )
+        if not requested:
+            await update.message.reply_text("Please type the name you use on the member roster.")
+            signup_waiting.add(user_id)
             return
-        member_id, member = next(iter(matches.items()))
-        member_name = member.get("display_name") or member.get("official_name")
+        if len(matches) == 1:
+            member_id, member = next(iter(matches.items()))
+            member_name = member.get("display_name") or member.get("official_name")
+        else:
+            member_id = sermon_portal.UNMATCHED_MEMBER_ID
+            member_name = text.strip()
         result, stored_name = sermon_portal.submit_link_request(user_id, member_id, member_name)
         if result == "already_approved":
             await update.message.reply_text(f"Your Telegram account is already linked as {stored_name}.")
@@ -757,14 +815,23 @@ async def receive_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if result == "already_pending":
             await update.message.reply_text(f"Your request for {stored_name} is already waiting for approval.")
             return
-        await update.message.reply_text(
-            f"Sign-up request submitted for {member_name}. An organizer must approve it before you can read messages."
-        )
+        if member_id == sermon_portal.UNMATCHED_MEMBER_ID:
+            confirmation = (
+                f"Sign-up request submitted with the name '{member_name}'. An organizer will match it "
+                "to the roster and approve it before you can read messages."
+            )
+            notice = f"New message-access signup needs roster matching: {member_name} (Telegram account {user_id}). Review with /message_access."
+        else:
+            confirmation = (
+                f"Sign-up request submitted for {member_name}. An organizer must approve it before you can read messages."
+            )
+            notice = f"New message-access sign-up: {member_name} (Telegram account {user_id}). Review with /message_access."
+        await update.message.reply_text(confirmation)
         for organizer_id in SERMON_ADMIN_IDS:
             try:
                 await context.bot.send_message(
                     chat_id=organizer_id,
-                    text=f"New message-access sign-up: {member_name} (Telegram account {user_id}). Review with /message_access.",
+                    text=notice,
                 )
             except Exception as exc:
                 print("Could not notify message-access organizer:", type(exc).__name__)
@@ -2666,7 +2733,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         signup_waiting.add(user_id)
         await query.edit_message_text(
             "Sign up for message access through Telegram\n\n"
-            "Type your exact roster name. An organizer will confirm the match before access is enabled."
+            "Type the name you use. If it does not match the roster exactly, an organizer will match it before approving access."
         )
         return
 
@@ -2692,10 +2759,48 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if action.startswith("msgacc:"):
         if not is_sermon_admin(user_id):
-            await query.answer("Only sermon administrators can review sign-ups.", show_alert=True)
+            await query.message.reply_text("Only sermon administrators can review sign-ups.")
             return
-        _, decision, requested_id = action.split(":", 2)
-        requested_id = int(requested_id)
+        parts = action.split(":")
+        decision = parts[1]
+        if decision == "match":
+            requested_id = int(parts[2])
+            roster_match_waiting[user_id] = requested_id
+            await query.message.reply_text(
+                f"Type the full name or part of the roster name to match Telegram account {requested_id}."
+            )
+            return
+        if decision == "link":
+            requested_id = int(parts[2])
+            member_id = parts[3]
+            member = MEMBERS.get(member_id)
+            if not member:
+                await query.message.reply_text("That roster entry no longer exists. Please search again.")
+                return
+            member_name = member.get("display_name") or member.get("official_name") or member_id
+            request = sermon_portal.assign_pending_link_member(
+                requested_id, member_id, member_name
+            )
+            if not request:
+                await query.edit_message_text("This signup is no longer waiting for a roster match.")
+                return
+            keyboard = [[
+                InlineKeyboardButton("✅ Approve", callback_data=f"msgacc:a:{requested_id}"),
+                InlineKeyboardButton("❌ Deny", callback_data=f"msgacc:d:{requested_id}"),
+            ]]
+            await query.edit_message_text(
+                f"Matched '{request['member_name']}' to {member_name} ({member_id}). Approve this link?",
+                reply_markup=InlineKeyboardMarkup(keyboard),
+            )
+            try:
+                await context.bot.send_message(
+                    chat_id=requested_id,
+                    text=f"An organizer matched your signup to {member_name}. The link is waiting for final approval.",
+                )
+            except Exception as exc:
+                print("Could not notify member about roster match:", type(exc).__name__)
+            return
+        requested_id = int(parts[2])
         if decision == "a":
             request, error = sermon_portal.approve_link_request(requested_id, user_id)
             if error:

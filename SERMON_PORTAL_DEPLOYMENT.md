@@ -19,8 +19,8 @@ The sermon library runs inside the existing Telegram bot deployment. Members ope
 
 ## Weekly use
 
-- Members use `/start` or `/signup`, submit the exact roster name, and wait for a sermon administrator to approve the Telegram account link with `/message_access`.
-- Sermon administrators send `/upload_message`, then upload the PDF with a caption such as `Sunday | 2026-10-04 | Sermon title`. If the original is in Google Drive, download a copy and upload it to the bot; direct Drive fetching is not configured in this version.
+- Members use `/start` or `/signup` and submit the name they use. Exact roster matches wait for administrator approval. If a name does not match uniquely, it is sent to the sermon administrators, who can search the roster, select the right entry, and then approve or deny the link.
+- Sermon administrators can tap **Upload sermon PDF** or send `/upload_message`, then upload the PDF with a caption such as `Sunday | 2026-10-04`. The library labels it by service and date. If the original is in Google Drive, download a copy and upload it to the bot; direct Drive fetching is not configured in this version.
 - Upload an **unlocked PDF**. The current protected source must first be opened with its existing password and saved as a copy without a password, so readers are not prompted for a shared code.
 - Uploading another sermon for the same service and date replaces the earlier PDF.
 

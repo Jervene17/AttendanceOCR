@@ -27,6 +27,7 @@ DATA_DIR = Path(os.getenv("SERMON_DATA_DIR", "data")).resolve()
 SERMON_DIR = DATA_DIR / "sermons"
 DB_PATH = DATA_DIR / "sermon_portal.sqlite3"
 MAX_PDF_BYTES = 10 * 1024 * 1024
+UNMATCHED_MEMBER_ID = "__unmatched__"
 TOKEN_TTL_SECONDS = 10 * 60
 _reader_tokens: dict[str, tuple[int, str, float]] = {}
 _attendance_checker = None
@@ -123,6 +124,22 @@ def pending_link_requests(limit: int = 30):
         return [dict(row) for row in rows]
 
 
+def assign_pending_link_member(telegram_id: int, member_id: str, member_name: str):
+    """Attach an unmatched signup to a roster entry, leaving approval explicit."""
+    with _connect() as db:
+        cursor = db.execute(
+            """UPDATE member_links SET member_id=?, member_name=?
+               WHERE telegram_id=? AND status='pending' AND member_id=?""",
+            (str(member_id), str(member_name), int(telegram_id), UNMATCHED_MEMBER_ID),
+        )
+        if cursor.rowcount != 1:
+            return None
+        row = db.execute(
+            "SELECT * FROM member_links WHERE telegram_id=?", (int(telegram_id),)
+        ).fetchone()
+        return dict(row) if row else None
+
+
 def approve_link_request(telegram_id: int, organizer_id: int):
     now = datetime.now(timezone.utc).isoformat()
     with _connect() as db:
@@ -132,6 +149,8 @@ def approve_link_request(telegram_id: int, organizer_id: int):
         ).fetchone()
         if not row:
             return None, "This request is no longer pending."
+        if row["member_id"] == UNMATCHED_MEMBER_ID:
+            return None, "Match this signup to a roster member before approving it."
         linked = db.execute(
             "SELECT telegram_id FROM member_links "
             "WHERE member_id=? AND status='approved'",
