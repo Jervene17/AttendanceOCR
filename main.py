@@ -1698,7 +1698,6 @@ def render_summary_text(service, service_date, entries):
 
     if not entries:
         lines.append("No attendance recorded for this service/date.")
-        return "\n".join(lines)
 
     members_by_dept = {}
     visitors, newcomers, catchups, unrecognized = [], [], [], []
@@ -1807,6 +1806,56 @@ def render_summary_text(service, service_date, entries):
 
         for c in catchups:
             lines.append(f"• {html.escape(c['name'])}")
+
+    # Sunday and Wednesday summaries also show roster members who were
+    # absent. Resolve names through the same alias index used by attendance
+    # entry so a roster alias still counts as present. Iterate MEMBERS rather
+    # than MEMBER_LISTS so inactive members are included too.
+    if (service or "").strip().casefold() in {"sunday", "wednesday"}:
+        present_member_ids = set()
+        for entry in entries:
+            member = find_member(entry.get("name", ""))
+            if member and member.get("member_id"):
+                present_member_ids.add(member["member_id"])
+
+        summary_department = {
+            "BLESSED FEMALES": "BLESSEDF",
+            "BLESSED MALES": "BLESSEDM",
+            "JS FEMALES": "JS",
+            "JS MALES": "JS",
+            "CAMPUS MALES": "Campus Male",
+        }
+        excluded_departments = {"OPM", "OVERSEAS PINOY MEMBERS", "MILKY WAY", "NEWCOMERS"}
+        absentees_by_dept = {}
+
+        for member_id, member in MEMBERS.items():
+            department = (member.get("department") or "").strip()
+            department_key = department.upper()
+            status = (member.get("status") or "").strip().upper()
+            if status == "NEWCOMER" or department_key in excluded_departments:
+                continue
+            if member_id in present_member_ids:
+                continue
+
+            display_department = summary_department.get(department, department)
+            absentees_by_dept.setdefault(display_department, []).append(member)
+
+        lines.append("")
+        lines.append("🚫 Absentees")
+        ordered_departments = list(MEMBER_LISTS.keys())
+        ordered_departments.extend(
+            dept for dept in absentees_by_dept if dept not in MEMBER_LISTS
+        )
+        if not absentees_by_dept:
+            lines.append("No absentees in the included roster groups.")
+        else:
+            for department in ordered_departments:
+                absent_members = absentees_by_dept.get(department, [])
+                if not absent_members:
+                    continue
+                lines.append(f"• {html.escape(department)}: {len(absent_members)}")
+                for absent_member in absent_members:
+                    lines.append(f"   • {html.escape(absent_member['display_name'])}")
 
     return "\n".join(lines)
 
