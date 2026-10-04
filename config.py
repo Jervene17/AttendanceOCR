@@ -547,14 +547,14 @@ MEMBERS = {
     },
 
     "CrF002": {
-        "display_name": "Grace",
+        "display_name": "Atty Grace",
         "official_name": "Grace Leguarda",
         "aliases": [
             "Grace Leguarda",
             "Atty Grace",
             "Leguarda, Grace B",
             "Leguarda, Grace",
-            "Grace",
+            "Atty Grace",
         ],
         "department": CAREER_FEMALES,
         "status": ACTIVE,
@@ -1051,7 +1051,6 @@ MEMBERS = {
         "display_name": "Grace - Japan",
         "official_name": "Grace Givera",
         "aliases": [
-            "Grace",
             "Grace Givera",
             "Megumi",
             "Megumi Givera",
