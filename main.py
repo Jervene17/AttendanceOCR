@@ -1723,7 +1723,9 @@ def append_absentee_section(lines, service, present_names):
         "JS MALES": "JS",
         "CAMPUS MALES": "Campus Male",
     }
-    excluded_departments = {"OPM", "OVERSEAS PINOY MEMBERS", "MILKY WAY", "NEWCOMERS"}
+    excluded_departments = {
+        "OPM", "OVERSEAS PINOY MEMBERS", "MILKY WAY", "NEWCOMERS", "LLC", "LVC"
+    }
     absentees_by_dept = {}
 
     for member_id, member in MEMBERS.items():
