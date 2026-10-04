@@ -155,6 +155,8 @@ correction_pending = {}
 # Message-library registration and organizer PDF upload flows.
 signup_waiting = set()
 sermon_upload_waiting = set()
+sermon_upload_caption_waiting = set()
+sermon_upload_details = {}
 roster_match_waiting = {}
 portal_attendance_cache = {}
 portal_attendance_lock = asyncio.Lock()
@@ -456,12 +458,14 @@ async def upload_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def begin_sermon_upload(reply_text, user_id):
-    sermon_upload_waiting.add(user_id)
+    sermon_upload_waiting.discard(user_id)
+    sermon_upload_details.pop(user_id, None)
+    sermon_upload_caption_waiting.add(user_id)
     await reply_text(
-        "Upload the sermon PDF as a document. Put this in its caption:\n"
+        "First send the service and date as a text message, like this:\n"
         "Sunday | YYYY-MM-DD\n"
-        "or\n"
-        "Wednesday | YYYY-MM-DD\n\n"
+        "or Wednesday | YYYY-MM-DD\n\n"
+        "I will then ask you to upload the PDF separately.\n\n"
         "The library needs an unlocked PDF so readers do not get a password prompt. "
         "Open the protected source with its current password and save an unlocked copy before uploading."
     )
@@ -680,23 +684,16 @@ async def receive_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if document.file_size and document.file_size > sermon_portal.MAX_PDF_BYTES:
         await update.message.reply_text("This file is over the 10 MB limit.")
         return
-    parts = [part.strip() for part in (update.message.caption or "").split("|", 1)]
-    if len(parts) != 2:
+    details = sermon_upload_details.get(user_id)
+    if not details:
         await update.message.reply_text(
-            "Add this caption and resend the PDF:\nSunday | YYYY-MM-DD\n"
-            "or Wednesday | YYYY-MM-DD"
+            "Please send the service and date as a text message first, for example:\n"
+            "Sunday | 2026-10-04"
         )
         return
-    service, service_date = parts
-    if service.title() not in ("Sunday", "Wednesday"):
-        await update.message.reply_text("Service must be Sunday or Wednesday.")
-        return
-    try:
-        datetime.strptime(service_date, "%Y-%m-%d")
-    except ValueError:
-        await update.message.reply_text("Use a service date in YYYY-MM-DD format.")
-        return
-    title = f"{service.title()} Message"
+    service = details["service"]
+    service_date = details["service_date"]
+    title = f"{service} Message"
 
     sermon_portal.initialize_storage()
     temporary = sermon_portal.store_directory() / f"upload-{uuid.uuid4().hex}.pdf"
@@ -720,6 +717,7 @@ async def receive_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
             temporary, service, service_date, title, uploaded_by=user_id
         )
         sermon_upload_waiting.discard(user_id)
+        sermon_upload_details.pop(user_id, None)
         await update.message.reply_text(
             f"✅ Saved {sermon['service']} message for {sermon['service_date']}.\n"
             "Members who attended that service can read it from the sermon library."
@@ -740,6 +738,36 @@ async def receive_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
 
     if not text:
+        return
+
+    if user_id in sermon_upload_caption_waiting:
+        if not is_sermon_admin(user_id):
+            sermon_upload_caption_waiting.discard(user_id)
+            await update.message.reply_text("Sermon uploads are limited to sermon administrators.")
+            return
+        if update.effective_chat.type != "private":
+            await update.message.reply_text("Please send the sermon service and date in a private chat with the bot.")
+            return
+        parts = [part.strip() for part in text.split("|", 1)]
+        if len(parts) != 2:
+            await update.message.reply_text("Use this format: Sunday | YYYY-MM-DD\nor Wednesday | YYYY-MM-DD")
+            return
+        service, service_date = parts
+        service = service.title()
+        if service not in ("Sunday", "Wednesday"):
+            await update.message.reply_text("Service must be Sunday or Wednesday. Send the service and date again.")
+            return
+        try:
+            datetime.strptime(service_date, "%Y-%m-%d")
+        except ValueError:
+            await update.message.reply_text("Use the date format YYYY-MM-DD, then send the service and date again.")
+            return
+        sermon_upload_details[user_id] = {"service": service, "service_date": service_date}
+        sermon_upload_caption_waiting.discard(user_id)
+        sermon_upload_waiting.add(user_id)
+        await update.message.reply_text(
+            f"✅ {service} · {service_date} recorded. Now upload the unlocked sermon PDF as a document."
+        )
         return
 
     # An administrator can search the roster after opening an unmatched signup.
